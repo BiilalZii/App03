@@ -8,6 +8,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>الخدمات الاجتماعية - الأغواط</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -150,6 +151,50 @@ header p{font-size:.72rem;color:var(--muted);margin-top:3px}
 .guide-tile .ic{font-size:1.4rem}
 .guide-tile h4{font-size:.86rem;margin:6px 0 3px}
 .guide-tile p{font-size:.74rem;color:var(--muted);line-height:1.6}
+/* ── أزرار الترويسة ── */
+.hdr-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.hdr-actions{display:flex;gap:6px;flex-shrink:0}
+.hdr-actions button{background:var(--card2);border:1px solid var(--border);color:var(--text);min-width:36px;height:36px;border-radius:10px;font-size:.95rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0 8px;font-family:inherit}
+.hdr-actions button:active{transform:scale(.94)}
+/* ── الوضع النهاري ── */
+body.light{--bg:#eef2f7;--card:#ffffff;--card2:#e6ecf3;--primary:#2563eb;--primary2:#1d4ed8;--text:#0f172a;--muted:#5b6b7f;--border:#c9d5e3;--input:#ffffff;--shadow:0 8px 30px rgba(15,23,42,.10)}
+body.light .nav{background:rgba(255,255,255,.97)}
+body.light .badge{background:#dbeafe;color:#1d4ed8}
+body.light .badge.red{background:#fee2e2;color:#b91c1c}
+body.light .badge.green{background:#dcfce7;color:#15803d}
+body.light .badge.orange{background:#ffedd5;color:#c2410c}
+body.light .badge.yellow{background:#fef9c3;color:#a16207}
+body.light .badge.gray{background:#e2e8f0;color:#475569}
+body.light .type-chip.active{background:#dbeafe;color:#1d4ed8}
+body.light .toast{background:#14532d;color:#dcfce7}
+body.light .toast.err{background:#7f1d1d;color:#fecaca}
+/* ── شاشة القفل PIN ── */
+#lock-screen{position:fixed;inset:0;background:var(--bg);z-index:1000;display:none;align-items:center;justify-content:center;padding:18px}
+#lock-screen.open{display:flex}
+.lock-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:26px 22px;width:100%;max-width:340px;text-align:center;box-shadow:var(--shadow)}
+.lock-card .ic{font-size:2.4rem}
+.lock-card h2{font-size:1.05rem;margin:8px 0 4px}
+.lock-card p{font-size:.75rem;color:var(--muted)}
+.lock-card input{width:100%;margin:14px 0 10px;padding:13px;border-radius:12px;border:1.5px solid var(--border);background:var(--input);color:var(--text);font-size:1.3rem;text-align:center;letter-spacing:.5em;outline:none;font-family:inherit}
+.lock-card input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(59,130,246,.18)}
+.lock-card .btn{width:100%;padding:12px}
+.lock-err{color:var(--danger);font-size:.75rem;min-height:1.1em;margin-top:8px}
+.shake{animation:shake .35s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-5px)}}
+/* ── لافتات التنبيه ── */
+.note-banner{border-radius:12px;padding:11px 14px;margin-bottom:12px;font-size:.8rem;display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap;border:1px solid;font-weight:500}
+.note-banner .btn{flex-shrink:0}
+.note-banner.warn{background:#3b2a0a;border-color:#7a5a10;color:#fde047}
+.note-banner.danger{background:#3f1212;border-color:#7f1d1d;color:#fca5a5}
+.note-banner.ok{background:#0a2e1a;border-color:#14532d;color:#86efac}
+body.light .note-banner.warn{background:#fef3c7;border-color:#f59e0b;color:#92400e}
+body.light .note-banner.danger{background:#fee2e2;border-color:#ef4444;color:#991b1b}
+body.light .note-banner.ok{background:#dcfce7;border-color:#22c55e;color:#166534}
+/* ── سجل الحالة ── */
+.log-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px dashed var(--border);font-size:.78rem;align-items:flex-start}
+.log-item:last-child{border:none}
+.log-item .dot{width:8px;height:8px;border-radius:50%;background:var(--primary);flex-shrink:0;margin-top:6px}
+.log-item .d{color:var(--muted);font-size:.7rem;white-space:nowrap}
 /* ── الطباعة ── */
 #print-area{display:none}
 @media print{
@@ -172,23 +217,47 @@ header p{font-size:.72rem;color:var(--muted);margin-top:3px}
 </head>
 <body>
 <header>
-  <h1>🏛️ الخدمات الاجتماعية</h1>
-  <p>ولاية الأغواط — بدون إنترنت · قابل للتعديل</p>
+  <div class="hdr-row">
+    <div>
+      <h1>🏛️ الخدمات الاجتماعية</h1>
+      <p>ولاية الأغواط — بدون إنترنت · قابل للتعديل</p>
+    </div>
+    <div class="hdr-actions">
+      <button type="button" id="btn-theme" title="الوضع الليلي/النهاري" onclick="toggleTheme()">☀️</button>
+      <button type="button" id="btn-rip" title="إظهار/إخفاء أرقام RIP" onclick="toggleRip()">🙈</button>
+      <button type="button" id="btn-lock" title="قفل التطبيق (PIN)" onclick="lockNow()">🔒</button>
+      <button type="button" title="الإعدادات" onclick="openSettings()">⚙️</button>
+    </div>
+  </div>
 </header>
 <div class="toast" id="toast"></div>
 <div id="modal-root"></div>
 <div id="print-area"></div>
+<div id="lock-screen">
+  <div class="lock-card" id="lock-card">
+    <div class="ic">🔒</div>
+    <h2>التطبيق مقفل</h2>
+    <p>أدخل رمز PIN للمتابعة</p>
+    <input type="password" id="lock-pin" inputmode="numeric" maxlength="8" placeholder="••••" autocomplete="off">
+    <button type="button" class="btn btn-primary" onclick="unlockApp()">فتح القفل</button>
+    <div class="lock-err" id="lock-err"></div>
+  </div>
+</div>
 
 <div id="page-home" class="page active">
+  <div id="backup-note"></div>
   <div class="top-bar">
     <button class="btn btn-primary btn-sm" onclick="showPage('reports')">📊 التقارير</button>
     <button class="btn btn-green btn-sm" onclick="exportData()">⬇️ تصدير</button>
     <button class="btn btn-outline btn-sm" onclick="importData()">⬆️ استيراد</button>
+    <button class="btn btn-outline btn-sm" onclick="document.getElementById('csv-file').click()">📥 استيراد CSV</button>
     <button class="btn btn-outline btn-sm" onclick="resetData()">↺ الأصلية</button>
     <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="handleImport(event)">
+    <input type="file" id="csv-file" accept=".csv,text/csv" style="display:none" onchange="handleCsvImport(event)">
   </div>
   <div class="stats" id="stats"></div>
   <div id="perf"></div>
+  <div id="orphan-reqs"></div>
   <div class="section-title">آخر المنح</div>
   <div id="recent-aides"></div>
 </div>
@@ -265,6 +334,9 @@ header p{font-size:.72rem;color:var(--muted);margin-top:3px}
     <button class="btn btn-green btn-sm" onclick="exportReportCSV()">📄 تصدير Excel/CSV</button>
   </div>
   <div class="report-chips" style="margin-bottom:6px">
+    <label style="font-size:.75rem;display:flex;align-items:center;gap:5px;color:var(--muted);cursor:pointer">
+      <input type="checkbox" id="rep-excl-ret" onchange="renderReports()"> 🚫 استبعاد المتقاعدين من المديونية
+    </label>
     <span style="font-size:.75rem;color:var(--muted)">سجل الموظفين:</span>
     <select id="rep-sex" onchange="renderReports()">
       <option value="">كل الأجناس</option>
@@ -305,6 +377,129 @@ header p{font-size:.72rem;color:var(--muted);margin-top:3px}
 const STORAGE_KEY = 'social_db_v3';
 let DB = null;
 let currentEmpId = null;
+
+/* ═══════ الإعدادات والحماية ═══════ */
+const SETTINGS_KEY = 'social_settings_v1';
+const PIN_KEY = 'social_pin_v1';
+const BACKUP_KEY = 'social_last_backup';
+let SETTINGS = {user:'المستخدم', ripHidden:true, theme:'dark'};
+function loadSettings(){
+  try{ const s=JSON.parse(localStorage.getItem(SETTINGS_KEY)); if(s) SETTINGS={...SETTINGS,...s}; }catch(e){}
+}
+function saveSettings(){ try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(SETTINGS)); }catch(e){} }
+async function hashPin(p){
+  const s='social-app03::'+p;
+  try{
+    if(crypto && crypto.subtle){
+      const buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+      return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+    }
+  }catch(e){}
+  let h=5381; for(let i=0;i<s.length;i++){ h=((h<<5)+h+s.charCodeAt(i))|0; }
+  return 'fnv:'+Math.abs(h).toString(16);
+}
+function pinIsSet(){ return !!localStorage.getItem(PIN_KEY); }
+function initLock(){
+  const locked = pinIsSet();
+  const ls=document.getElementById('lock-screen');
+  if(locked){ ls.classList.add('open'); setTimeout(()=>{ const i=document.getElementById('lock-pin'); if(i) i.focus(); },120); }
+  else ls.classList.remove('open');
+}
+function lockNow(){
+  if(!pinIsSet()){ openSettings('pin'); return; }
+  document.getElementById('lock-err').textContent='';
+  document.getElementById('lock-pin').value='';
+  document.getElementById('lock-screen').classList.add('open');
+}
+async function unlockApp(){
+  const v=document.getElementById('lock-pin').value.trim();
+  if(!v) return;
+  const h=await hashPin(v);
+  if(h===localStorage.getItem(PIN_KEY)){
+    document.getElementById('lock-screen').classList.remove('open');
+    toast('مرحباً بك 👋');
+  }else{
+    document.getElementById('lock-err').textContent='رمز غير صحيح، حاول مجدداً';
+    const card=document.getElementById('lock-card');
+    card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+    document.getElementById('lock-pin').value='';
+  }
+}
+function maskRip(v){
+  if(v==null||v==='') return v;
+  const s=String(v);
+  if(!SETTINGS.ripHidden) return s;
+  if(s.length<=8) return '••••••';
+  return s.slice(0,6)+'••••••••'+s.slice(-4);
+}
+function toggleRip(){
+  SETTINGS.ripHidden=!SETTINGS.ripHidden; saveSettings();
+  document.getElementById('btn-rip').textContent = SETTINGS.ripHidden ? '🙈' : '👁️';
+  rerenderCurrent();
+  toast(SETTINGS.ripHidden ? 'تم إخفاء أرقام RIP 🙈' : 'أرقام RIP ظاهرة الآن 👁️');
+}
+function toggleTheme(){
+  SETTINGS.theme = SETTINGS.theme==='dark' ? 'light' : 'dark';
+  applyTheme(); saveSettings();
+}
+function applyTheme(){
+  document.body.classList.toggle('light', SETTINGS.theme==='light');
+  const b=document.getElementById('btn-theme'); if(b) b.textContent = SETTINGS.theme==='light' ? '🌙' : '☀️';
+}
+function rerenderCurrent(){
+  const active=document.querySelector('.page.active'); if(!active) return;
+  const name=active.id.replace('page-','');
+  if(name==='employee' && currentEmpId!=null) openEmployee(currentEmpId); else showPage(name);
+}
+function openSettings(focus){
+  const hasPin=pinIsSet();
+  openModal({
+    title:'⚙️ الإعدادات', saveLabel:'حفظ',
+    fields:[
+      {name:'user', label:'اسم المستخدم (يُوثَّق في سجل تغيير الحالات)', value:SETTINGS.user},
+      {type:'raw', html:`<div class="form-group"><label>حماية التطبيق</label>
+        <div class="btn-row" style="margin:0">
+          <button type="button" class="btn ${hasPin?'btn-outline':'btn-primary'} btn-sm" onclick="askSetPin()">${hasPin?'🔑 تغيير رمز PIN':'🔑 تعيين رمز PIN'}</button>
+          ${hasPin?'<button type="button" class="btn btn-red btn-sm" onclick="removePin()">🗑️ إزالة الرمز</button>':''}
+        </div>
+        <div class="hint">${hasPin?'التطبيق مقفل برمز PIN — يُطلب عند كل فتح للصفحة':'لا يوجد رمز — أي شخص يفتح الملف يمكنه رؤية البيانات'}</div></div>`},
+      {type:'raw', html:`<div class="form-group"><label>خصوصية أرقام RIP</label>
+        <button type="button" class="btn ${SETTINGS.ripHidden?'btn-green':'btn-outline'} btn-sm" onclick="toggleRip();closeModal();openSettings()">${SETTINGS.ripHidden?'🙈 الأرقام مخفية — اضغط للإظهار':'👁️ الأرقام ظاهرة — اضغط للإخفاء'}</button>
+        <div class="hint">عند الإخفاء تظهر أرقام الحساب البنكي مقنّعة في كل الصفحات والتقارير والطباعة</div></div>`},
+      {type:'raw', html:`<div class="form-group"><label>المظهر</label>
+        <button type="button" class="btn btn-outline btn-sm" onclick="toggleTheme();closeModal();openSettings()">${SETTINGS.theme==='light'?'🌙 التبديل للوضع الليلي':'☀️ التبديل للوضع النهاري'}</button></div>`},
+    ],
+    onSave: vals=>{
+      SETTINGS.user=(vals.user||'المستخدم').trim()||'المستخدم';
+      saveSettings(); closeModal(); toast('تم حفظ الإعدادات ✓');
+    }
+  });
+  if(focus==='pin') setTimeout(()=>askSetPin(),150);
+}
+function askSetPin(){
+  openModal({
+    title:'🔑 تعيين رمز PIN', saveLabel:'حفظ الرمز',
+    fields:[
+      {name:'pin1', label:'الرمز الجديد (4 إلى 8 أرقام)', required:true, type:'password', inputmode:'numeric', attrs:'maxlength="8"'},
+      {name:'pin2', label:'تأكيد الرمز', required:true, type:'password', inputmode:'numeric', attrs:'maxlength="8"'},
+    ],
+    onSave: async vals=>{
+      const p1=vals.pin1.trim(), p2=vals.pin2.trim();
+      if(!/^\d{4,8}$/.test(p1)){ toast('الرمز يجب أن يكون من 4 إلى 8 أرقام', true); return; }
+      if(p1!==p2){ toast('الرمزان غير متطابقين', true); return; }
+      localStorage.setItem(PIN_KEY, await hashPin(p1));
+      toast('تم تعيين رمز PIN ✓');
+      closeModal(); openSettings();
+    }
+  });
+}
+function removePin(){
+  openConfirm({
+    title:'إزالة رمز PIN', yesLabel:'إزالة',
+    message:'سيتم إلغاء القفل برمز PIN. هل أنت متأكد؟',
+    onYes:()=>{ localStorage.removeItem(PIN_KEY); toast('تمت إزالة الرمز'); closeModal(); openSettings(); }
+  });
+}
 
 /* أنواع المنح الافتراضية مع المبالغ */
 const AIDE_TYPES = [
@@ -444,10 +639,14 @@ function loadDB(){
 }
 
 function init(){
+  loadSettings(); applyTheme();
+  document.getElementById('btn-rip').textContent = SETTINGS.ripHidden ? '🙈' : '👁️';
   const src = loadDB();
   normalizeDB();
   renderHome(); fillYears();
   document.getElementById('q').addEventListener('keydown', e => { if(e.key==='Enter') doSearch(); });
+  document.getElementById('lock-pin').addEventListener('keydown', e => { if(e.key==='Enter') unlockApp(); });
+  initLock();
   if(src==='saved') toast('تم استعادة التعديلات المحفوظة');
 }
 
@@ -469,6 +668,50 @@ function renderHome(){
   const sumRest = DB.credits.reduce((s,c)=>s+(+c.restant||0),0);
   const sumCredit = DB.credits.reduce((s,c)=>s+(+c.montant||0),0);
   const sumPay = DB.payments.reduce((s,p)=>s+(+p.montant||0),0);
+
+  /* 🧾 تذكير النسخ الاحتياطي */
+  const bk=document.getElementById('backup-note');
+  if(bk){
+    const last=localStorage.getItem(BACKUP_KEY);
+    let banner;
+    if(!last){
+      banner=`<div class="note-banner danger"><span>🔴 لم تُنشئ أي نسخة احتياطية بعد — التعديلات محفوظة في هذا الجهاز فقط وقد تُفقد!</span>
+        <button class="btn btn-green btn-sm" onclick="exportData()">⬇️ تصدير الآن</button></div>`;
+    }else{
+      const days=Math.floor((Date.now()-new Date(last).getTime())/86400000);
+      if(days>=7){
+        banner=`<div class="note-banner warn"><span>🟠 آخر نسخة احتياطية: قبل ${days} يوماً (${new Date(last).toLocaleDateString('ar-DZ')}) — يُنصح بالتصدير أسبوعياً</span>
+          <button class="btn btn-green btn-sm" onclick="exportData()">⬇️ تصدير الآن</button></div>`;
+      }else{
+        banner=`<div class="note-banner ok"><span>🟢 النسخة الاحتياطية سليمة — آخر تصدير: ${new Date(last).toLocaleDateString('ar-DZ')} (قبل ${days} يوماً)</span></div>`;
+      }
+    }
+    bk.innerHTML=banner;
+  }
+
+  /* 👤 طلبات سلفة بدون ملف موظف */
+  const orphBox=document.getElementById('orphan-reqs');
+  if(orphBox){
+    const empIds=new Set(DB.employees.map(e=>e.id));
+    const orphans=DB.credit_requests.map((r,i)=>({r,i})).filter(x=>x.r.employee_id==null || !empIds.has(x.r.employee_id));
+    if(orphans.length){
+      orphBox.innerHTML=`<div class="card" style="border-color:#7a5a10;background:#241c05">
+        <div class="section-title" style="margin-top:0"><span>⚠️ طلبات سلفة بدون ملف موظف (${orphans.length})</span></div>
+        <p style="font-size:.75rem;color:var(--muted);margin-bottom:8px">هذه الطلبات غير مرتبطة بأي ملف موظف. أنشئ ملفاً جديداً أو اربطها بموظف موجود:</p>
+        ${orphans.slice(0,12).map(x=>`
+          <div class="item" style="cursor:default">
+            <div class="name">${fmt(x.r.nom_ar)} ${fmt(x.r.prenom_ar)} <span style="color:var(--muted);font-weight:400">· ${fmt(x.r.annee_demande)}</span></div>
+            <div class="meta"><span class="money">${money(x.r.montant)} دج</span><span>${fmt(x.r.note)}</span></div>
+            <div class="actions">
+              <button class="btn btn-primary btn-sm" onclick="showCreateEmployeeFromReq(${x.i})">👤 إنشاء موظف</button>
+              <button class="btn btn-outline btn-sm" onclick="showLinkReqToEmp(${x.i})">🔗 ربط بموظف</button>
+            </div>
+          </div>`).join('')}
+        ${orphans.length>12?`<div class="empty">…و ${orphans.length-12} طلبات أخرى</div>`:''}
+      </div>`;
+    } else orphBox.innerHTML='';
+  }
+
   document.getElementById('stats').innerHTML = `
     <div class="stat"><div class="n">${DB.employees.length}</div><div class="l">موظف</div></div>
     <div class="stat"><div class="n">${DB.aides.length}</div><div class="l">منحة</div></div>
@@ -515,7 +758,7 @@ function doSearch(){
       <div class="meta">
         ${e.sex?`<span>${sexLabel(e)}</span>`:''}${empAgeBadge(e)}
         <span>${fmt(e.nom_prenom)}</span>
-        ${e.rip?`<span style="font-family:ui-monospace,monospace;font-size:.72rem">${fmt(e.rip)}</span>`:''}
+        ${e.rip?`<span style="font-family:ui-monospace,monospace;font-size:.72rem">${maskRip(e.rip)}</span>`:''}
         ${e.credit_restant>0?`<span class="badge red">متبقي ${money(e.credit_restant)}</span>`:''}
         ${e.total_aide>0?`<span class="badge green">منح ${money(e.total_aide)}</span>`:''}
       </div>
@@ -698,8 +941,12 @@ function openEmployee(id){
     <div class="detail-row"><span class="k">حالة الموظف</span><span class="v">${empStatutBadge(e)}</span></div>
     <div class="detail-row"><span class="k">الجنس</span><span class="v">${fmt(e.sex)==='M'?'ذكر':fmt(e.sex)==='F'?'أنثى':fmt(e.sex)}</span></div>
     <div class="detail-row"><span class="k">تاريخ الميلاد</span><span class="v">${fmt(e.date_naissance)}</span></div>
-    <div class="detail-row"><span class="k">RIP</span><span class="v" style="font-family:ui-monospace,monospace;font-size:.78rem">${fmt(e.rip)}</span></div>
+    <div class="detail-row"><span class="k">RIP</span><span class="v" style="font-family:ui-monospace,monospace;font-size:.78rem">${maskRip(e.rip)}</span></div>
     <div class="detail-row"><span class="k">رقم الضمان</span><span class="v">${fmt(e.num_ss)}</span></div>
+    ${(e.date_retraite||e.retrait_dec_num||e.retrait_dec_date)?`
+    <div class="detail-row"><span class="k">📅 تاريخ التقاعد</span><span class="v">${fmt(e.date_retraite)}</span></div>
+    <div class="detail-row"><span class="k">📄 قرار التقاعد/التوقف</span><span class="v">${fmt(e.retrait_dec_num)}${e.retrait_dec_date?` — ${fmt(e.retrait_dec_date)}`:''}</span></div>
+    ${e.retrait_note?`<div class="detail-row"><span class="k">📝 ملاحظات الوثيقة</span><span class="v">${fmt(e.retrait_note)}</span></div>`:''}`:''}
     <div class="detail-row"><span class="k">إجمالي المنح</span><span class="v money">${money(e.total_aide)} دج</span></div>
     <div class="detail-row"><span class="k">إجمالي القروض</span><span class="v money">${money(e.total_credit)} دج</span></div>
     <div class="detail-row"><span class="k">${retired?'غير قابل للتحصيل':'المتبقي'}</span><span class="v money" style="color:${retired?'#fde047':'var(--danger)'}">${money(e.credit_restant)} دج</span></div>
@@ -726,18 +973,35 @@ function openEmployee(id){
   )).join('') : emptyBox('لا توجد طلبات سلفة');
 
   html += sectionTitle('💳 القروض', credits.length, retired?null:`showAddCredit(${id})`);
-  html += credits.length ? credits.map((c,i) => itemBlock(
+  html += credits.length ? credits.map((c,i) => {
+    const cheque=[c.num_cheque, c.date_cheque].filter(Boolean).join(' · ');
+    return itemBlock(
     `${fmt(c.type_credit)} — ${fmt(c.annee)}`,
-    `<span class="money">${money(c.montant)} دج</span>${c.restant>0?(retired?`<span class="badge yellow">غير قابل للتحصيل ${money(c.restant)}</span>`:`<span class="badge red">متبقي ${money(c.restant)}</span>`):`<span class="badge green">مسدد</span>`}`,
-    `showEditCredit(${id},${i})`, `confirmDeleteCredit(${id},${i})`
-  )).join('') : emptyBox('لا توجد قروض');
+    `<span class="money">${money(c.montant)} دج</span>${c.restant>0?(retired?`<span class="badge yellow">غير قابل للتحصيل ${money(c.restant)}</span>`:`<span class="badge red">متبقي ${money(c.restant)}</span>`):`<span class="badge green">مسدد</span>`}${cheque?`<span>🏦 شيك: ${cheque}</span>`:''}${c.notes?`<span>${fmt(c.notes)}</span>`:''}`,
+    `showEditCredit(${id},${i})`, `confirmDeleteCredit(${id},${i})`,
+    nz(c.restant)>0?`showCreditSchedule(${id},${i})`:null, '📅 خطة'
+  );}).join('') : emptyBox('لا توجد قروض');
 
   html += sectionTitle('💰 التسديدات', pays.length, `showAddPayment(${id})`);
   html += pays.length ? pays.map((p,i) => itemBlock(
     `<span class="money" style="color:var(--accent)">${money(p.montant)} دج</span>`,
     `<span>${fmt(p.date_pay)?.toString().slice(0,10)}</span><span>رمز: ${fmt(p.code_credit)}</span>`,
-    `showEditPayment(${id},${i})`, `confirmDeletePayment(${id},${i})`
+    `showEditPayment(${id},${i})`, `confirmDeletePayment(${id},${i})`,
+    `printReceipt(${id},${i})`, '🧾 وصل'
   )).join('') : emptyBox('لا توجد تسديدات');
+
+  /* 📜 سجل تغيّر حالة الموظف */
+  if(Array.isArray(e.statut_log) && e.statut_log.length){
+    html += sectionTitle('📜 سجل تاريخ الحالة', e.statut_log.length, null);
+    html += `<div class="card">` + e.statut_log.map(l=>{
+      const d=new Date(l.date);
+      const dStr=isNaN(d)?fmt(l.date):d.toLocaleString('ar-DZ',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+      return `<div class="log-item"><div class="dot"></div>
+        <div style="flex:1"><strong>${fmt(l.from)}</strong> ← <strong>${fmt(l.to)}</strong>
+        ${l.to==='متقاعد'&&e.date_retraite?`<span class="badge yellow">تقاعد بتاريخ: ${fmt(e.date_retraite)}</span>`:''}
+        <div class="d">🕐 ${dStr} · ✍️ ${fmt(l.by)}</div></div></div>`;
+    }).join('') + `</div>`;
+  }
 
   document.getElementById('emp-card').innerHTML = html;
   showPage('employee');
@@ -747,12 +1011,13 @@ function sectionTitle(title, count, addFn){
   return `<div class="section-title"><span>${title} (${count})</span>${addFn?`<button class="btn btn-primary btn-sm" onclick="${addFn}">＋</button>`:''}</div>`;
 }
 function emptyBox(t){ return `<div class="empty">${t}</div>`; }
-function itemBlock(title, meta, editFn, delFn){
+function itemBlock(title, meta, editFn, delFn, extraFn, extraLabel){
   return `<div class="item" style="cursor:default">
     <div class="name">${title}</div>
     <div class="meta">${meta}</div>
     <div class="actions">
       <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();${editFn}">تعديل</button>
+      ${extraFn?`<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();${extraFn}">${extraLabel||'عرض'}</button>`:''}
       <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:#5c1a1a" onclick="event.stopPropagation();${delFn}">حذف</button>
     </div>
   </div>`;
@@ -792,6 +1057,7 @@ function openModal({title, fields, onSave, saveLabel, extraHtml}){
 }
 
 function renderField(f){
+  if(f.type==='raw') return f.html||'';
   if(f.type==='section') return `<div class="form-section">${f.label}</div>`;
   const req = f.required ? '<span class="req">*</span>' : '';
   const hint = f.hint ? `<div class="hint" id="hint_${f.name}">${f.hint}</div>` : '';
@@ -875,6 +1141,29 @@ function openConfirm({title, message, onYes, yesLabel}){
   document.getElementById('modal-bg').addEventListener('click', e=>{ if(e.target.id==='modal-bg') closeModal(); });
   document.getElementById('modal-yes').onclick=()=>{ closeModal(); onYes(); };
 }
+function openConfirmEx({title, html, onYes, yesLabel, yesClass}){
+  const root=document.getElementById('modal-root');
+  root.innerHTML=`<div class="modal-bg" id="modal-bg"><div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header"><h3>${title}</h3><button type="button" class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="modal-body">${html}</div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline" onclick="closeModal()">إلغاء</button>
+      <button type="button" class="btn ${yesClass||'btn-primary'}" id="modal-yes">${yesLabel||'تأكيد'}</button>
+    </div></div></div>`;
+  document.getElementById('modal-bg').addEventListener('click', e=>{ if(e.target.id==='modal-bg') closeModal(); });
+  document.getElementById('modal-yes').onclick=()=>{ closeModal(); onYes(); };
+}
+function openHtmlModal({title, html, okLabel, onOk}){
+  const root=document.getElementById('modal-root');
+  root.innerHTML=`<div class="modal-bg" id="modal-bg"><div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header"><h3>${title}</h3><button type="button" class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="modal-body">${html}</div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-primary" onclick="closeModal()">${okLabel||'حسناً'}</button>
+    </div></div></div>`;
+  document.getElementById('modal-bg').addEventListener('click', e=>{ if(e.target.id==='modal-bg') closeModal(); });
+  if(onOk) document.querySelector('#modal-root .modal-footer .btn').onclick=()=>{ closeModal(); onOk(); };
+}
 
 /* ═══════ Aide types chips ═══════ */
 function aideTypeChipsHtml(selected){
@@ -908,7 +1197,49 @@ function bindAideTypeChips(){
 }
 
 /* ═══════ Employee CRUD ═══════ */
+function findDuplicateEmployees(vals, excludeId){
+  const rip=(vals.rip||'').trim();
+  const nom=(vals.nom_ar||'').trim(), prenom=(vals.prenom_ar||'').trim();
+  return DB.employees.filter(e=>{
+    if(excludeId!=null && e.id==excludeId) return false;
+    const sameRip = rip && e.rip && String(e.rip).trim()===rip;
+    const sameName = nom && prenom && (e.nom_ar||'').trim()===nom && (e.prenom_ar||'').trim()===prenom;
+    return sameRip || sameName;
+  });
+}
+function confirmAddDuplicate(dups, doSave){
+  const rows=dups.slice(0,6).map(e=>`<div class="detail-row"><span class="k">#${e.id} ${empStatutBadge(e)}</span><span class="v">${fmt(e.nom_ar)} ${fmt(e.prenom_ar)}${e.rip?` · <span style="font-family:ui-monospace,monospace;font-size:.72rem">${maskRip(e.rip)}</span>`:''}</span></div>`).join('');
+  openConfirmEx({
+    title:'🔁 يوجد سجلات مشابهة', yesLabel:'متابعة الإضافة رغم ذلك', yesClass:'btn-green',
+    html:`<div class="confirm-box" style="text-align:right">
+      <p style="margin-bottom:8px">وجدنا <strong>${dups.length}</strong> موظفاً بنفس الاسم أو نفس رقم RIP:</p>
+      ${rows}
+      <p style="font-size:.72rem;color:var(--muted);margin-top:10px">تأكد من عدم إنشاء سجل مزدوج. يمكنك فتح السجل الموجود من صفحة البحث.</p>
+    </div>`,
+    onYes: doSave
+  });
+}
+function empRetirementFields(e){
+  e=e||{};
+  return [
+    {type:'raw', html:'<div class="form-section" id="fg_ret_section">📄 وثيقة التقاعد / التوقف عن العمل (اختياري)</div>'},
+    {name:'date_retraite', label:'تاريخ التقاعد', type:'date', value:e.date_retraite||'', hint:'تاريخ توقف الموظف عن العمل فعلياً — يُوثَّق في السجل التاريخي'},
+    {name:'retrait_dec_num', label:'رقم قرار التقاعد / التوقف', value:e.retrait_dec_num||'', inputmode:'numeric'},
+    {name:'retrait_dec_date', label:'تاريخ القرار', type:'date', value:e.retrait_dec_date||''},
+    {name:'retrait_note', label:'ملاحظات الوثيقة (المرجع، المصدر...)', value:e.retrait_note||''},
+  ];
+}
+function bindEmpStatusFields(){
+  const sel=document.getElementById('f_statut_emploi'); if(!sel) return;
+  const ids=['fg_ret_section','fg_date_retraite','fg_retrait_dec_num','fg_retrait_dec_date','fg_retrait_note'];
+  const toggle=()=>{
+    const show=(sel.value==='متقاعد'||sel.value==='متوقف عن العمل');
+    ids.forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display=show?'':'none'; });
+  };
+  sel.addEventListener('change', toggle); toggle();
+}
 function showAddEmployee(){
+  window._onModalReady = bindEmpStatusFields;
   openModal({
     title:'إضافة موظف جديد', saveLabel:'إضافة الموظف',
     fields:[
@@ -920,14 +1251,49 @@ function showAddEmployee(){
       {name:'date_naissance', label:'تاريخ الميلاد'},
       {name:'rip', label:'رقم RIP', inputmode:'numeric', hint:'10 إلى 20 رقم'},
       {name:'num_ss', label:'رقم الضمان', inputmode:'numeric'},
+      ...empRetirementFields({}),
     ],
     onSave: vals=>{
-      const id=nextId();
-      DB.employees.push({id, nom_ar:vals.nom_ar, prenom_ar:vals.prenom_ar, nom_prenom:vals.nom_prenom,
-        sex:vals.sex, statut_emploi:vals.statut_emploi||'يعمل', date_naissance:vals.date_naissance, rip:vals.rip||null, num_ss:vals.num_ss||null,
-        total_aide:0, aide_paye:0, total_credit:0, credit_paye:0, credit_restant:0, enfants_m:0, enfants_f:0});
-      saveDB(); closeModal(); openEmployee(id);
+      const dups=findDuplicateEmployees(vals);
+      if(dups.length){ confirmAddDuplicate(dups, ()=>saveNewEmployee(vals)); return; }
+      saveNewEmployee(vals);
     }
+  });
+}
+function saveNewEmployee(vals){
+  const id=nextId();
+  const e={id, nom_ar:vals.nom_ar, prenom_ar:vals.prenom_ar, nom_prenom:vals.nom_prenom,
+    sex:vals.sex, statut_emploi:vals.statut_emploi||'يعمل', date_naissance:vals.date_naissance, rip:vals.rip||null, num_ss:vals.num_ss||null,
+    total_aide:0, aide_paye:0, total_credit:0, credit_paye:0, credit_restant:0, enfants_m:0, enfants_f:0};
+  if(vals.statut_emploi==='متقاعد'||vals.statut_emploi==='متوقف عن العمل'){
+    Object.assign(e,{date_retraite:vals.date_retraite||'', retrait_dec_num:vals.retrait_dec_num||'', retrait_dec_date:vals.retrait_dec_date||'', retrait_note:vals.retrait_note||''});
+  }
+  if(vals.statut_emploi && vals.statut_emploi!=='يعمل'){
+    e.statut_log=[{from:'جديد', to:vals.statut_emploi, date:new Date().toISOString(), by:SETTINGS.user||'المستخدم'}];
+  }
+  DB.employees.push(e);
+  saveDB(); closeModal(); openEmployee(id);
+}
+function logStatusChange(e, newStatut){
+  const oldStatut=e.statut_emploi||'يعمل';
+  if(oldStatut===newStatut) return false;
+  if(!Array.isArray(e.statut_log)) e.statut_log=[];
+  e.statut_log.unshift({from:oldStatut, to:newStatut, date:new Date().toISOString(), by:SETTINGS.user||'المستخدم'});
+  return true;
+}
+function showRetirementAlert(empId){
+  const e=DB.employees.find(x=>x.id==empId); if(!e) return;
+  const credits=DB.credits.filter(c=>c.employee_id==empId && nz(c.restant)>0);
+  const rest=nz(e.credit_restant);
+  openHtmlModal({
+    title:'⚠️ تنبيه: تحويل إلى متقاعد',
+    html:`<div>
+      <p style="font-size:.85rem;margin-bottom:10px">تم تحويل <strong>${fmt(e.nom_ar)} ${fmt(e.prenom_ar)}</strong> إلى حالة «متقاعد».</p>
+      <div class="note-banner warn" style="margin-bottom:10px"><span>💸 المبلغ الذي أصبح <strong>غير قابل للتحصيل</strong>: <strong style="font-size:1.05rem">${money(rest)} دج</strong> — عدد القروض النشطة: ${credits.length}</span></div>
+      ${credits.map(c=>`<div class="detail-row"><span class="k">${fmt(c.type_credit)} ${fmt(c.annee)}</span><span class="v money">${money(c.restant)} دج</span></div>`).join('')}
+      <p style="font-size:.72rem;color:var(--muted);margin-top:10px">📌 هذه المبالغ تُحتسب ضمن «غير قابل للتحصيل» في التقارير، ويمكن استبعادها من نسبة الاسترداد القابلة للتحصيل عبر خيار «استبعاد المتقاعدين» في صفحة التقارير. تم تسجيل العملية في سجل حالة الموظف.</p>
+    </div>`,
+    okLabel:'فهمت'
   });
 }
 function showEditEmployee(id){
@@ -943,13 +1309,25 @@ function showEditEmployee(id){
       {name:'date_naissance', label:'تاريخ الميلاد', value:e.date_naissance||''},
       {name:'rip', label:'رقم RIP', value:e.rip||'', inputmode:'numeric'},
       {name:'num_ss', label:'رقم الضمان', value:e.num_ss||'', inputmode:'numeric'},
+      ...empRetirementFields(e),
     ],
     onSave: vals=>{
-      Object.assign(e, vals);
+      const changed=logStatusChange(e, vals.statut_emploi||'يعمل');
+      Object.assign(e, {
+        nom_ar:vals.nom_ar, prenom_ar:vals.prenom_ar, nom_prenom:vals.nom_prenom,
+        sex:vals.sex, statut_emploi:vals.statut_emploi||'يعمل', date_naissance:vals.date_naissance,
+        rip:vals.rip||null, num_ss:vals.num_ss||null,
+        date_retraite:vals.date_retraite||'', retrait_dec_num:vals.retrait_dec_num||'',
+        retrait_dec_date:vals.retrait_dec_date||'', retrait_note:vals.retrait_note||''
+      });
       DB.aides.filter(a=>a.employee_id==id).forEach(a=>{a.nom_ar=vals.nom_ar;a.prenom_ar=vals.prenom_ar;});
       DB.credits.filter(c=>c.employee_id==id).forEach(c=>{c.nom_ar=vals.nom_ar;c.prenom_ar=vals.prenom_ar;});
       DB.payments.filter(p=>p.employee_id==id).forEach(p=>{p.nom_ar=vals.nom_ar;p.prenom_ar=vals.prenom_ar;});
-      saveDB(); closeModal(); openEmployee(id);
+      saveDB(); closeModal();
+      if(changed && e.statut_emploi==='متقاعد' && nz(e.credit_restant)>0){
+        openEmployee(id);
+        showRetirementAlert(id);
+      } else openEmployee(id);
     }
   });
 }
@@ -1141,6 +1519,9 @@ function showAddCredit(empId){
       {name:'annee', label:'السنة', type:'number', inputmode:'numeric', value:new Date().getFullYear()},
       {name:'montant', label:'المبلغ', required:true, type:'number', inputmode:'numeric'},
       {name:'restant', label:'المتبقي', type:'number', inputmode:'numeric', hint:'اتركه فارغاً = نفس المبلغ'},
+      {type:'section', label:'🏦 معطيات الشيك (اختياري)'},
+      {name:'num_cheque', label:'رقم الشيك', inputmode:'numeric'},
+      {name:'date_cheque', label:'تاريخ الشيك', type:'date'},
       {name:'notes', label:'ملاحظات'},
     ],
     onSave: vals=>{
@@ -1155,7 +1536,7 @@ function showAddCredit(empId){
       }
       const n=empName(id); const montant=+vals.montant||0;
       DB.credits.unshift({id:nextCreditId(), employee_id:id, type_credit, annee:+vals.annee||null,
-        montant, restant:vals.restant===''?montant:(+vals.restant||0), notes:vals.notes, nom_ar:n.nom_ar, prenom_ar:n.prenom_ar});
+        montant, restant:vals.restant===''?montant:(+vals.restant||0), num_cheque:vals.num_cheque||'', date_cheque:vals.date_cheque||'', notes:vals.notes, nom_ar:n.nom_ar, prenom_ar:n.prenom_ar});
       recalcEmp(id); saveDB(); closeModal();
       if(currentEmpId==id) openEmployee(id); else toast('تمت الإضافة');
     }
@@ -1173,6 +1554,9 @@ function showEditCredit(empId, localIdx){
       {name:'annee', label:'السنة', type:'number', value:c.annee??''},
       {name:'montant', label:'المبلغ', required:true, type:'number', value:c.montant??''},
       {name:'restant', label:'المتبقي', type:'number', value:c.restant??''},
+      {type:'section', label:'🏦 معطيات الشيك (اختياري)'},
+      {name:'num_cheque', label:'رقم الشيك', inputmode:'numeric', value:c.num_cheque||''},
+      {name:'date_cheque', label:'تاريخ الشيك', type:'date', value:c.date_cheque||''},
       {name:'notes', label:'ملاحظات', value:c.notes||''},
     ],
     onSave: vals=>{
@@ -1181,7 +1565,7 @@ function showEditCredit(empId, localIdx){
         type_credit=(vals.type_credit_custom||'').trim();
         if(!type_credit){ toast('يرجى إدخال نوع القرض', true); return; }
       }
-      Object.assign(c,{type_credit, annee:+vals.annee||null, montant:+vals.montant||0, restant:+vals.restant||0, notes:vals.notes});
+      Object.assign(c,{type_credit, annee:+vals.annee||null, montant:+vals.montant||0, restant:+vals.restant||0, num_cheque:vals.num_cheque||'', date_cheque:vals.date_cheque||'', notes:vals.notes});
       recalcEmp(empId); saveDB(); closeModal(); openEmployee(empId);
     }
   });
@@ -1192,13 +1576,27 @@ function confirmDeleteCredit(empId, localIdx){
     DB.credits=DB.credits.filter(x=>x!==c); recalcEmp(empId); saveDB(); openEmployee(empId);
   }});
 }
+function empPayCreditTotals(empId, excludePayment){
+  const credit=DB.credits.filter(c=>c.employee_id==empId).reduce((s,c)=>s+(+c.montant||0),0);
+  const paid=DB.payments.filter(p=>p.employee_id==empId && p!==excludePayment).reduce((s,p)=>s+(+p.montant||0),0);
+  return {credit, paid};
+}
+function checkOverpay(empId, montant, excludePayment){
+  const {credit, paid}=empPayCreditTotals(empId, excludePayment);
+  const max=credit-paid;
+  if(montant - max > 0.5){
+    toast(`🚫 رفض التسديد: المجموع سيصبح ${money(paid+montant)} دج وهو أكبر من مجموع القروض (${money(credit)} دج). الحد الأقصى المسموح: ${money(Math.max(0,max))} دج`, true);
+    return false;
+  }
+  return true;
+}
 function showAddPayment(empId){
   window._onModalReady = bindPaymentCreditSelect;
   openModal({
     title:'إضافة تسديد', saveLabel:'إضافة',
     fields:[
       {name:'employee_id', label:'الموظف', required:true, picker:true, value:empId||''},
-      {name:'montant', label:'المبلغ (دج)', required:true, type:'number', inputmode:'numeric'},
+      {name:'montant', label:'المبلغ (دج)', required:true, type:'number', inputmode:'numeric', hint:'⚠️ لا يمكن أن يتجاوز مجموع التسديدات مجموع القروض'},
       {name:'date_pay', label:'التاريخ', type:'date', value:new Date().toISOString().slice(0,10)},
       {name:'credit_ref', label:'رمز القرض / السلفة غير المسددة', type:'select', value:'', options:paymentCreditOptions(empId), hint:'اختر قرضاً غير مسدد ليتم خصم المبلغ من المتبقي تلقائياً'},
       {name:'code_credit_manual', label:'رمز القرض اليدوي', placeholder:'أدخل الرمز يدوياً'},
@@ -1207,6 +1605,7 @@ function showAddPayment(empId){
     onSave: vals=>{
       const id=+vals.employee_id; const n=empName(id);
       const montant=+vals.montant||0;
+      if(!checkOverpay(id, montant, null)) return;
       const link=paymentCreditFromVal(vals.credit_ref);
       const code=link.code_credit || (vals.credit_ref==='__custom'?(vals.code_credit_manual||'').trim():'');
       DB.payments.unshift({employee_id:id, montant, date_pay:vals.date_pay,
@@ -1236,6 +1635,7 @@ function showEditPayment(empId, localIdx){
     ],
     onSave: vals=>{
       const montant=+vals.montant||0;
+      if(!checkOverpay(empId, montant, p)) return;
       const oldCid=p.credit_id, oldMontant=nz(p.montant);
       if(oldCid!=null) creditRemainingAfterChange(oldCid, +oldMontant);
       const link=paymentCreditFromVal(vals.credit_ref);
@@ -1327,7 +1727,7 @@ function renderCredits(){
     <div class="item" onclick="openEmployee(${c.employee_id})">
       <div class="name">${fmt(c.nom_ar)} ${fmt(c.prenom_ar)}${retired?' '+empStatutBadge(emp):''}</div>
       <div class="meta"><span>${fmt(c.type_credit)} ${fmt(c.annee)}</span><span class="money">${money(c.montant)}</span>
-        ${c.restant>0?(retired?`<span class="badge yellow">غير قابل للتحصيل ${money(c.restant)}</span>`:`<span class="badge red">متبقي ${money(c.restant)}</span>`):`<span class="badge green">مسدد</span>`}</div>
+        ${c.restant>0?(retired?`<span class="badge yellow">غير قابل للتحصيل ${money(c.restant)}</span>`:`<span class="badge red">متبقي ${money(c.restant)}</span>`):`<span class="badge green">مسدد</span>`}${(c.num_cheque||c.date_cheque)?`<span>🏦 ${[c.num_cheque,c.date_cheque].filter(Boolean).join(' · ')}</span>`:''}</div>
     </div>`;
   }).join(''):'<div class="empty">لا توجد نتائج</div>')
     + `<div class="detail-row" style="justify-content:center;gap:8px"><span class="k">${total} قرض</span><span class="v money">الإجمالي: ${money(sum)} دج · متبقي: ${money(rest)} دج</span></div>`
@@ -1338,7 +1738,9 @@ function exportData(){
   const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download='social_data_'+new Date().toISOString().slice(0,10)+'.json'; a.click();
-  toast('تم التصدير');
+  localStorage.setItem(BACKUP_KEY, new Date().toISOString());
+  toast('تم التصدير — احتفظ بالملف في مكان آمن ✓');
+  if(document.querySelector('#page-home.active')) renderHome();
 }
 function importData(){ document.getElementById('import-file').click(); }
 function handleImport(ev){
@@ -1349,7 +1751,9 @@ function handleImport(ev){
       const d=JSON.parse(e.target.result);
       if(!d.employees) throw new Error('صيغة غير صحيحة');
       DB=d; normalizeDB();
-      saveDB(); fillYears(); renderHome(); toast('تم الاستيراد ✓');
+      saveDB(); fillYears(); renderHome();
+      localStorage.setItem(BACKUP_KEY, new Date().toISOString());
+      toast('تم الاستيراد ✓');
     }catch(err){ toast('فشل: '+err.message, true); }
   };
   reader.readAsText(file); ev.target.value='';
@@ -1451,6 +1855,8 @@ function renderReports(){
   const recRate = tCredit>0 ? (tPay/tCredit*100) : 0;
   const retiredIds=new Set(DB.employees.filter(isRetired).map(e=>e.id));
   const tUncollectible=sumOf(credits.filter(c=>retiredIds.has(c.employee_id)),c=>c.restant);
+  const tCollectible=Math.max(0,tCreditRest-tUncollectible);
+  const recRateAdj=(tCredit-tUncollectible)>0 ? (tPay/(tCredit-tUncollectible)*100) : 0;
   html+=`<div class="report-card"><div class="section-title" style="margin-top:0"><span>💰 ملخص الميزانية</span></div>
     <div class="detail-row"><span class="k">إجمالي السلفات الممنوحة</span><span class="v money">${money(tCredit)} دج</span></div>
     <div class="detail-row"><span class="k">إجمالي المنح (نفقات)</span><span class="v money">${money(tAide)} دج</span></div>
@@ -1458,8 +1864,12 @@ function renderReports(){
     <div class="detail-row"><span class="k">إجمالي الاستردادات</span><span class="v money" style="color:var(--accent)">${money(tPay)} دج</span></div>
     <div class="detail-row"><span class="k">الرصيد الصافي المتبقي</span><span class="v money" style="color:var(--danger)">${money(tCreditRest)} دج</span></div>
     <div class="detail-row"><span class="k">منها غير قابل للتحصيل (متقاعدون)</span><span class="v money" style="color:#fde047">${money(tUncollectible)} دج</span></div>
-    <div class="detail-row" style="margin-top:6px"><span class="k">نسبة الاسترداد</span><span class="v money">${recRate.toFixed(1)}%</span></div>
+    <div class="detail-row"><span class="k">المتبقي القابل للتحصيل فعلياً</span><span class="v money" style="color:var(--warn)">${money(tCollectible)} دج</span></div>
+    <div class="detail-row" style="margin-top:6px"><span class="k">نسبة الاسترداد (الإجمالية)</span><span class="v money">${recRate.toFixed(1)}%</span></div>
     <div class="rate-bar" style="margin:6px 0 2px"><div class="rate-fill" style="width:${Math.min(100,recRate).toFixed(1)}%"></div></div>
+    <div class="detail-row" style="margin-top:10px"><span class="k">نسبة الاسترداد (قابل للتحصيل فقط)</span><span class="v money">${recRateAdj.toFixed(1)}%</span></div>
+    <div class="rate-bar" style="margin:6px 0 2px"><div class="rate-fill" style="width:${Math.min(100,recRateAdj).toFixed(1)}%;background:linear-gradient(90deg,#f59e0b,#fde047)"></div></div>
+    <p style="font-size:.68rem;color:var(--muted);margin-top:6px">💡 النسبة المعدّلة تستبعد ديون المتقاعدين غير القابلة للتحصيل من المقام.</p>
   </div>`;
 
   const byType=groupBy(aides,a=>a.type_aide_ar,a=>a.montant).sort((a,b)=>b.s-a.s);
@@ -1495,11 +1905,14 @@ function renderReports(){
   const topEmp=[...DB.employees].filter(e=>nz(e.total_aide)>0).sort((a,b)=>nz(b.total_aide)-nz(a.total_aide)).slice(0,10);
   html+=`<div class="report-card"><div class="section-title" style="margin-top:0"><span>🏆 أعلى المستفيدين من المنح</span></div>${reportTable(['#','اللقب','الاسم','المنح (دج)','القروض (دج)','المتبقي (دج)'],topEmp.map(e=>[String(e.id),`<strong>${fmt(e.nom_ar)}</strong>`,fmt(e.prenom_ar),`<span class="money">${money(e.total_aide)}</span>`,`<span class="money">${money(e.total_credit)}</span>`,`<span class="money" style="color:var(--danger)">${money(e.credit_restant)}</span>`]))}</div>`;
 
-  const topDebt=[...DB.employees].filter(e=>nz(e.credit_restant)>0).sort((a,b)=>nz(b.credit_restant)-nz(a.credit_restant)).slice(0,15);
-  html+=`<div class="report-card"><div class="section-title" style="margin-top:0"><span>🚨 أعلى 15 موظفاً عليهم ديون متبقية</span></div>${reportTable(['#','اللقب','الاسم','الحالة','المقترض (دج)','المسدد (دج)','المتبقي (دج)'],topDebt.map(e=>[String(e.id),`<strong>${fmt(e.nom_ar)}</strong>`,fmt(e.prenom_ar),empStatutBadge(e),`<span class="money">${money(e.total_credit)}</span>`,`<span class="money" style="color:var(--accent)">${money(nz(e.total_credit)-nz(e.credit_restant))}</span>`,`<span class="money" style="${isRetired(e)?'color:#fde047':'color:var(--danger)'}">${money(e.credit_restant)}</span>`]))}</div>`;
+  const exclRet=document.getElementById('rep-excl-ret')?.checked;
+  let topDebt=[...DB.employees].filter(e=>nz(e.credit_restant)>0);
+  if(exclRet) topDebt=topDebt.filter(e=>!isRetired(e));
+  topDebt=topDebt.sort((a,b)=>nz(b.credit_restant)-nz(a.credit_restant)).slice(0,15);
+  html+=`<div class="report-card"><div class="section-title" style="margin-top:0"><span>🚨 أعلى 15 موظفاً عليهم ديون متبقية${exclRet?' <span class="badge yellow">بدون المتقاعدين</span>':''}</span></div>${reportTable(['#','اللقب','الاسم','الحالة','المقترض (دج)','المسدد (دج)','المتبقي (دج)'],topDebt.map(e=>[String(e.id),`<strong>${fmt(e.nom_ar)}</strong>`,fmt(e.prenom_ar),empStatutBadge(e),`<span class="money">${money(e.total_credit)}</span>`,`<span class="money" style="color:var(--accent)">${money(nz(e.total_credit)-nz(e.credit_restant))}</span>`,`<span class="money" style="${isRetired(e)?'color:#fde047':'color:var(--danger)'}">${money(e.credit_restant)}</span>`]))}</div>`;
 
   const emps=applyEmpFilters([...DB.employees],'rep-sex','rep-age').sort((a,b)=>(a.nom_ar||'').localeCompare(b.nom_ar||'','ar'));
-  html+=`<div class="report-card"><div class="section-title" style="margin-top:0"><span>👥 سجل الموظفين (${emps.length})</span></div>${reportTable(['#','اللقب','الاسم','الجنس','العمر','RIP','المنح (دج)','القروض (دج)','المتبقي (دج)'],emps.map(e=>[String(e.id),`<strong>${fmt(e.nom_ar)}</strong>`,fmt(e.prenom_ar),sexLabel(e),ageOf(e.date_naissance)??'—',`<span style="font-family:ui-monospace,monospace;font-size:.7rem">${fmt(e.rip)}</span>`,`<span class="money">${money(e.total_aide)}</span>`,`<span class="money">${money(e.total_credit)}</span>`,`<span class="money" style="color:var(--danger)">${money(e.credit_restant)}</span>`]))}</div>`;
+  html+=`<div class="report-card"><div class="section-title" style="margin-top:0"><span>👥 سجل الموظفين (${emps.length})</span></div>${reportTable(['#','اللقب','الاسم','الجنس','العمر','RIP','المنح (دج)','القروض (دج)','المتبقي (دج)'],emps.map(e=>[String(e.id),`<strong>${fmt(e.nom_ar)}</strong>`,fmt(e.prenom_ar),sexLabel(e),ageOf(e.date_naissance)??'—',`<span style="font-family:ui-monospace,monospace;font-size:.7rem">${maskRip(e.rip)}</span>`,`<span class="money">${money(e.total_aide)}</span>`,`<span class="money">${money(e.total_credit)}</span>`,`<span class="money" style="color:var(--danger)">${money(e.credit_restant)}</span>`]))}</div>`;
 
   document.getElementById('reports-body').innerHTML=html;
 }
@@ -1536,20 +1949,28 @@ function printReports(){
   const bySt=groupBy(aides,a=>a.statut,a=>a.montant).sort((a,b)=>b.s-a.s);
   b+=`<h2>✅ المنح حسب الحالة</h2>`+printTable(['الحالة','العدد','الإجمالي (دج)'],bySt.map(r=>[r.k,String(r.c),money(r.s)]));
   const recRate=tCredit>0?(tPay/tCredit*100):0;
+  const retiredIdsP=new Set(DB.employees.filter(isRetired).map(e=>e.id));
+  const tUncolP=sumOf(credits.filter(c=>retiredIdsP.has(c.employee_id)),c=>c.restant);
+  const recRateAdjP=(tCredit-tUncolP)>0?(tPay/(tCredit-tUncolP)*100):0;
   b+=`<h2>💰 ملخص الميزانية</h2>`+printTable(['البيان','القيمة'],[
     ['السلفات الممنوحة',money(tCredit)+' دج'],
     ['المنح (نفقات)',money(tAide)+' دج'],
     ['إجمالي النفقات',money(tCredit+tAide)+' دج'],
     ['الاستردادات',money(tPay)+' دج'],
     ['الرصيد الصافي المتبقي',money(tCreditRest)+' دج'],
-    ['نسبة الاسترداد',recRate.toFixed(1)+'%']
+    ['منها غير قابل للتحصيل (متقاعدون)',money(tUncolP)+' دج'],
+    ['نسبة الاسترداد (الإجمالية)',recRate.toFixed(1)+'%'],
+    ['نسبة الاسترداد (قابل للتحصيل فقط)',recRateAdjP.toFixed(1)+'%']
   ]);
   const motifs=groupBy(reqs,r=>r.note,r=>r.montant).sort((a,b)=>b.c-a.c).slice(0,8);
   b+=`<h2>📌 أسباب طلبات السلف الشائعة</h2>`+printTable(['السبب','عدد الطلبات','المبلغ (دج)'],motifs.map(m=>[m.k,String(m.c),money(m.s)]));
-  const topDebt=[...DB.employees].filter(e=>nz(e.credit_restant)>0).sort((a,b)=>nz(b.credit_restant)-nz(a.credit_restant)).slice(0,15);
-  b+=`<h2>🚨 أعلى 15 موظفاً عليهم ديون متبقية</h2>`+printTable(['#','اللقب','الاسم','المقترض (دج)','المسدد (دج)','المتبقي (دج)'],topDebt.map(e=>[String(e.id),fmt(e.nom_ar),fmt(e.prenom_ar),money(e.total_credit),money(nz(e.total_credit)-nz(e.credit_restant)),money(e.credit_restant)]));
+  const exclRetP=document.getElementById('rep-excl-ret')?.checked;
+  let topDebt=[...DB.employees].filter(e=>nz(e.credit_restant)>0);
+  if(exclRetP) topDebt=topDebt.filter(e=>!isRetired(e));
+  topDebt=topDebt.sort((a,b)=>nz(b.credit_restant)-nz(a.credit_restant)).slice(0,15);
+  b+=`<h2>🚨 أعلى 15 موظفاً عليهم ديون متبقية${exclRetP?' (بدون المتقاعدين)':''}</h2>`+printTable(['#','اللقب','الاسم','الحالة','المقترض (دج)','المسدد (دج)','المتبقي (دج)'],topDebt.map(e=>[String(e.id),fmt(e.nom_ar),fmt(e.prenom_ar),(e.statut_emploi&&e.statut_emploi!=='يعمل')?e.statut_emploi:'يعمل',money(e.total_credit),money(nz(e.total_credit)-nz(e.credit_restant)),money(e.credit_restant)]));
   const emps=[...DB.employees].sort((a,b)=>(a.nom_ar||'').localeCompare(b.nom_ar||'','ar'));
-  b+=`<h2>👥 سجل الموظفين (${emps.length})</h2>`+printTable(['#','اللقب','الاسم','RIP','المنح (دج)','القروض (دج)','المتبقي (دج)'],emps.map(e=>[String(e.id),fmt(e.nom_ar),fmt(e.prenom_ar),fmt(e.rip),money(e.total_aide),money(e.total_credit),money(e.credit_restant)]));
+  b+=`<h2>👥 سجل الموظفين (${emps.length})</h2>`+printTable(['#','اللقب','الاسم','RIP','المنح (دج)','القروض (دج)','المتبقي (دج)'],emps.map(e=>[String(e.id),fmt(e.nom_ar),fmt(e.prenom_ar),maskRip(e.rip),money(e.total_aide),money(e.total_credit),money(e.credit_restant)]));
   printHTML('تقرير الخدمات الاجتماعية', b);
 }
 
@@ -1564,11 +1985,12 @@ function printEmployee(id){
     <div class="ph">${fmt(e.nom_prenom)||''}</div>`;
   b+=`<table>
     <tr><th style="width:25%">الجنس</th><td style="width:25%">${e.sex==='M'?'ذكر':(e.sex==='F'?'أنثى':'—')}</td><th style="width:25%">تاريخ الميلاد</th><td>${fmt(e.date_naissance)}</td></tr>
-    <tr><th>RIP</th><td>${fmt(e.rip)}</td><th>رقم الضمان</th><td>${fmt(e.num_ss)}</td></tr>
+    <tr><th>الحالة</th><td>${fmt(e.statut_emploi)||'يعمل'}</td><th>تاريخ التقاعد</th><td>${fmt(e.date_retraite)}</td></tr>
+    <tr><th>RIP</th><td>${maskRip(e.rip)}</td><th>رقم الضمان</th><td>${fmt(e.num_ss)}</td></tr>
     <tr><th>إجمالي المنح</th><td>${money(e.total_aide)} دج</td><th>إجمالي القروض</th><td>${money(e.total_credit)} دج</td></tr>
     <tr><th>متبقي القروض</th><td>${money(e.credit_restant)} دج</td><th></th><td></td></tr></table>`;
   b+=`<h2>🎁 المنح (${aides.length})</h2>`+(aides.length?printTable(['النوع','المبلغ (دج)','السنة','الحالة','الوثيقة','رقم الوثيقة'],aides.map(a=>[fmt(a.type_aide_ar),money(a.montant),fmt(a.annee),fmt(a.statut),fmt(a.type_doc),fmt(a.n_doc)])):'<p>لا توجد منح</p>');
-  b+=`<h2>💳 القروض (${credits.length})</h2>`+(credits.length?printTable(['النوع','السنة','المبلغ (دج)','المتبقي (دج)','ملاحظات'],credits.map(c=>[fmt(c.type_credit),fmt(c.annee),money(c.montant),money(c.restant),fmt(c.notes)])):'<p>لا توجد قروض</p>');
+  b+=`<h2>💳 القروض (${credits.length})</h2>`+(credits.length?printTable(['النوع','السنة','المبلغ (دج)','المتبقي (دج)','رقم الشيك','تاريخ الشيك','ملاحظات'],credits.map(c=>[fmt(c.type_credit),fmt(c.annee),money(c.montant),money(c.restant),fmt(c.num_cheque),fmt(c.date_cheque),fmt(c.notes)])):'<p>لا توجد قروض</p>');
   b+=`<h2>📝 طلبات السلف (${reqs.length})</h2>`+(reqs.length?printTable(['السنة','المبلغ (دج)','السبب','رأي اللجنة'],reqs.map(r=>[fmt(r.annee_demande),money(r.montant),fmt(r.note),fmt(r.avis_comite)])):'<p>لا توجد طلبات</p>');
   b+=`<h2>💰 التسديدات (${pays.length})</h2>`+(pays.length?printTable(['التاريخ','المبلغ (دج)','رمز القرض'],pays.map(p=>[fmt(p.date_pay).slice(0,10),money(p.montant),fmt(p.code_credit)])):'<p>لا توجد تسديدات</p>');
   printHTML(`ملف ${fmt(e.nom_ar)} ${fmt(e.prenom_ar)}`, b);
@@ -1576,23 +1998,260 @@ function printEmployee(id){
 
 function exportReportCSV(){
   const list=applyEmpFilters([...DB.employees],'rep-sex','rep-age');
-  const head=['id','اللقب','الاسم','الاسم باللاتينية','الجنس','العمر','تاريخ الميلاد','RIP','رقم الضمان','إجمالي المنح','إجمالي القروض','متبقي القروض'];
-  const rows=list.map(e=>[e.id,e.nom_ar||'',e.prenom_ar||'',e.nom_prenom||'',sexLabel(e),ageOf(e.date_naissance)??'',e.date_naissance||'',e.rip||'',e.num_ss||'',nz(e.total_aide),nz(e.total_credit),nz(e.credit_restant)]);
-  const csv='\uFEFF'+[head,...rows].map(r=>r.map(c=>{ c=String(c); return /[",;\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c; }).join(';')).join('\r\n');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download='employees_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
-  toast('تم تصدير CSV ✓');
+  const doExport=ripVisible=>{
+    const ripFmt=v=>ripVisible?String(v??''):String(v??'').replace(/.(?=.{4})/g,'•');
+    const head=['id','اللقب','الاسم','الاسم باللاتينية','الجنس','العمر','تاريخ الميلاد','RIP','رقم الضمان','إجمالي المنح','إجمالي القروض','متبقي القروض'];
+    const rows=list.map(e=>[e.id,e.nom_ar||'',e.prenom_ar||'',e.nom_prenom||'',sexLabel(e),ageOf(e.date_naissance)??'',e.date_naissance||'',ripFmt(e.rip),e.num_ss||'',nz(e.total_aide),nz(e.total_credit),nz(e.credit_restant)]);
+    const csv='\uFEFF'+[head,...rows].map(r=>r.map(c=>{ c=String(c); return /[",;\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c; }).join(';')).join('\r\n');
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download='employees_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
+    toast('تم تصدير CSV ✓'+(ripVisible?' (RIP مكشوفة)':' (RIP مقنّعة)'));
+  };
+  if(SETTINGS.ripHidden){
+    openConfirmEx({
+      title:'📄 خصوصية أرقام RIP', yesLabel:'تصدير RIP مكشوفة', yesClass:'btn-green',
+      html:`<div class="confirm-box" style="text-align:right">
+        <p>⚠️ أرقام RIP مخفية حالياً في التطبيق.</p>
+        <p style="margin-top:8px">اختر <strong>«تصدير RIP مكشوفة»</strong> إذا كنت تحتاج الأرقام الحقيقية في ملف Excel، أو <strong>«إلغاء»</strong> لتصديرها مقنّعة.</p>
+      </div>`,
+      onYes:()=>doExport(true)
+    });
+  } else doExport(true);
+}
+
+/* ═══════ 👤 إنشاء/ربط موظف من طلب سلفة يتيم ═══════ */
+function showCreateEmployeeFromReq(reqIdx){
+  const r=DB.credit_requests[reqIdx]; if(!r) return;
+  openModal({
+    title:'👤 إنشاء موظف من طلب السلفة', saveLabel:'إنشاء وربط',
+    fields:[
+      {name:'nom_ar', label:'اللقب بالعربية', required:true, value:r.nom_ar&&r.nom_ar!=='inconnu'?r.nom_ar:''},
+      {name:'prenom_ar', label:'الاسم بالعربية', required:true, value:r.prenom_ar&&r.prenom_ar!=='inconnu'?r.prenom_ar:''},
+      {name:'nom_prenom', label:'الاسم باللاتينية', value:r.nom&&r.nom!=='inconnu'?r.nom:''},
+      {name:'sex', label:'الجنس', type:'select', value:'', options:[{v:'',t:'غير محدد'},{v:'M',t:'ذكر'},{v:'F',t:'أنثى'}]},
+      {name:'date_naissance', label:'تاريخ الميلاد'},
+      {name:'rip', label:'رقم RIP', inputmode:'numeric'},
+      {name:'num_ss', label:'رقم الضمان', inputmode:'numeric'},
+    ],
+    onSave: vals=>{
+      const id=nextId();
+      DB.employees.push({id, nom_ar:vals.nom_ar, prenom_ar:vals.prenom_ar, nom_prenom:vals.nom_prenom,
+        sex:vals.sex||null, statut_emploi:'يعمل', date_naissance:vals.date_naissance||null, rip:vals.rip||null, num_ss:vals.num_ss||null,
+        total_aide:0, aide_paye:0, total_credit:0, credit_paye:0, credit_restant:0, enfants_m:0, enfants_f:0});
+      r.employee_id=id;
+      saveDB(); closeModal(); toast('تم إنشاء الموظف وربط الطلب ✓');
+      openEmployee(id);
+    }
+  });
+}
+function showLinkReqToEmp(reqIdx){
+  const r=DB.credit_requests[reqIdx]; if(!r) return;
+  openModal({
+    title:`🔗 ربط طلب ${fmt(r.nom_ar)} ${fmt(r.prenom_ar)} بموظف`, saveLabel:'ربط',
+    fields:[{name:'employee_id', label:'اختر الموظف', required:true, picker:true, value:''}],
+    onSave: vals=>{
+      const id=+vals.employee_id;
+      const e=DB.employees.find(x=>x.id==id);
+      if(!e){ toast('الموظف غير موجود', true); return; }
+      r.employee_id=id;
+      saveDB(); closeModal(); toast('تم ربط الطلب بالموظف ✓');
+      openEmployee(id);
+    }
+  });
+}
+
+/* ═══════ 🧾 وصل تسديد قابل للطباعة ═══════ */
+function printReceipt(empId, idx){
+  const e=DB.employees.find(x=>x.id==empId); if(!e) return;
+  const pays=DB.payments.filter(p=>p.employee_id==empId);
+  const p=pays[idx]; if(!p) return;
+  const credits=DB.credits.filter(c=>c.employee_id==empId);
+  const totalCredit=credits.reduce((s,c)=>s+(+c.montant||0),0);
+  const totalPaid=pays.reduce((s,x)=>s+(+x.montant||0),0);
+  const resteApres=(+p.dette||0)||Math.max(0,totalCredit-totalPaid);
+  const linked=credits.find(c=>c.id==p.credit_id);
+  const b=`
+    <div class="pk">وصل تسديد</div>
+    <h1>🏛️ الخدمات الاجتماعية — ولاية الأغواط</h1>
+    <table>
+      <tr><th style="width:28%">رقم الوصل</th><td style="width:22%">${String(p.date_pay||'').slice(0,4)}/${String(idx+1).padStart(3,'0')}</td><th style="width:25%">تاريخ التسديد</th><td>${fmt(p.date_pay).slice(0,10)}</td></tr>
+      <tr><th>الموظف</th><td colspan="3"><strong>${fmt(e.nom_ar)} ${fmt(e.prenom_ar)}</strong> — رقمه #${e.id}</td></tr>
+      <tr><th>المبلغ المسدد</th><td colspan="3"><strong style="font-size:16px">${money(p.montant)} دج</strong></td></tr>
+      <tr><th>مصلحة التسديد</th><td colspan="3">${linked?`${fmt(linked.type_credit)} ${fmt(linked.annee)} (رمز ${fmt(p.code_credit||linked.id)})`:(p.code_credit?`رمز القرض: ${fmt(p.code_credit)}`:'—')}</td></tr>
+      <tr><th>مجموع القروض</th><td>${money(totalCredit)} دج</td><th>المسدد حتى اليوم</th><td>${money(totalPaid)} دج</td></tr>
+      <tr><th>المتبقي بعد التسديد</th><td colspan="3"><strong>${money(resteApres)} دج</strong></td></tr>
+    </table>
+    <table style="margin-top:46px">
+      <tr><th style="width:33%;border:none;background:transparent !important">توقيع المستلم</th><th style="width:34%;border:none;background:transparent !important">أمين الصندوق</th><th style="width:33%;border:none;background:transparent !important">ختم الجمعية</th></tr>
+      <tr><td style="border:none;height:60px"></td><td style="border:none"></td><td style="border:none"></td></tr>
+    </table>`;
+  printHTML(`وصل تسديد — ${fmt(e.nom_ar)} ${fmt(e.prenom_ar)}`, b);
+}
+
+/* ═══════ 📅 خطة تسديد القرض بالأقساط ═══════ */
+let _sched={empId:null, idx:null, rows:[]};
+function showCreditSchedule(empId, idx){
+  const c=DB.credits.filter(x=>x.employee_id==empId)[idx]; if(!c) return;
+  const rest=nz(c.restant);
+  if(rest<=0){ toast('هذا القرض مسدد بالكامل ✓', true); return; }
+  _sched={empId, idx, rows:[]};
+  const defAmount=Math.ceil(rest/10/500)*500;
+  const html=`
+    <div class="form-group"><label>طريقة الحساب</label>
+      <select id="sched-mode" onchange="recalcSchedule()">
+        <option value="months">حسب عدد الأشهر</option>
+        <option value="amount">حسب القسط الشهري</option>
+      </select></div>
+    <div class="form-group" id="sched-months-wrap"><label>عدد الأشهر</label>
+      <input type="number" id="sched-months" inputmode="numeric" value="10" oninput="recalcSchedule()"></div>
+    <div class="form-group" id="sched-amount-wrap" style="display:none"><label>القسط الشهري (دج)</label>
+      <input type="number" id="sched-amount" inputmode="numeric" value="${defAmount}" oninput="recalcSchedule()"></div>
+    <div class="form-group"><label>تاريخ بداية التسديد</label>
+      <input type="date" id="sched-start" value="${new Date().toISOString().slice(0,10)}" onchange="recalcSchedule()"></div>
+    <div id="sched-out"></div>
+    <div class="btn-row" style="margin-bottom:0"><button type="button" class="btn btn-primary btn-sm" onclick="printSchedule()">🖨️ طباعة الخطة</button></div>`;
+  openHtmlModal({title:'📅 خطة تسديد القرض', html, okLabel:'إغلاق'});
+  recalcSchedule();
+}
+function recalcSchedule(){
+  const c=DB.credits.filter(x=>x.employee_id==_sched.empId)[_sched.idx]; if(!c) return;
+  const rest=nz(c.restant);
+  const modeEl=document.getElementById('sched-mode'); if(!modeEl) return;
+  const mode=modeEl.value;
+  const mw=document.getElementById('sched-months-wrap'), aw=document.getElementById('sched-amount-wrap');
+  if(mw) mw.style.display=mode==='months'?'':'none';
+  if(aw) aw.style.display=mode==='amount'?'':'none';
+  let monthly;
+  if(mode==='months'){
+    const m=Math.max(1, +document.getElementById('sched-months').value||1);
+    monthly=rest/m;
+  }else{
+    monthly=+document.getElementById('sched-amount').value||0;
+  }
+  const start=document.getElementById('sched-start').value||new Date().toISOString().slice(0,10);
+  _sched.rows=buildScheduleRows(rest, monthly, start);
+  document.getElementById('sched-out').innerHTML=scheduleTableHtml(_sched.rows);
+}
+function buildScheduleRows(rest, monthly, start){
+  const rows=[]; if(!(monthly>0)) return rows;
+  const d=new Date(start+'T12:00:00');
+  let rem=rest, acc=0, i=1;
+  while(rem>0.5 && i<=360){
+    let pay=Math.min(monthly, rem);
+    pay=Math.round(pay*100)/100;
+    rem=Math.round((rem-pay)*100)/100; if(rem<0.5) rem=0;
+    acc=Math.round((acc+pay)*100)/100;
+    const p2=n=>String(n).padStart(2,'0');
+    rows.push({n:i, date:`${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`, pay, acc, rem});
+    d.setMonth(d.getMonth()+1); i++;
+  }
+  return rows;
+}
+function scheduleTableHtml(rows){
+  if(!rows.length) return '<div class="empty">أدخل قسطاً أو عدداً صالحاً</div>';
+  return `<div class="table-wrap"><table class="report-table"><thead><tr><th>#</th><th>الشهر</th><th>القسط (دج)</th><th>التراكمي</th><th>المتبقي</th></tr></thead><tbody>
+    ${rows.map(r=>`<tr><td>${r.n}</td><td>${r.date}</td><td class="num">${money(r.pay)}</td><td class="num">${money(r.acc)}</td><td class="num" style="color:${r.rem>0?'var(--danger)':'var(--accent)'}">${money(r.rem)}</td></tr>`).join('')}
+  </tbody></table></div>
+  <div class="detail-row"><span class="k">المدة المتوقعة</span><span class="v">${rows.length} شهراً</span></div>`;
+}
+function printSchedule(){
+  const c=DB.credits.filter(x=>x.employee_id==_sched.empId)[_sched.idx]; if(!c) return;
+  const e=DB.employees.find(x=>x.id==_sched.empId);
+  const rows=_sched.rows||[];
+  let b=`<h2>📅 خطة تسديد: ${fmt(c.type_credit)} ${fmt(c.annee||'')}</h2>
+    <table><tr><th>الموظف</th><td colspan="3">${fmt(e?.nom_ar)} ${fmt(e?.prenom_ar)} — #${_sched.empId}</td></tr>
+    <tr><th>مبلغ القرض</th><td>${money(c.montant)} دج</td><th>المتبقي</th><td>${money(c.restant)} دج</td></tr></table>
+    ${scheduleTableHtml(rows)}`;
+  printHTML('خطة تسديد قرض', b);
+}
+
+/* ═══════ 📥 استيراد سجل الموظفين من CSV/Excel ═══════ */
+function csvSplit(line, delim){
+  const out=[]; let cur='', inQ=false;
+  for(let i=0;i<line.length;i++){
+    const ch=line[i];
+    if(inQ){
+      if(ch==='"'){ if(line[i+1]==='"'){ cur+='"'; i++; } else inQ=false; }
+      else cur+=ch;
+    }else{
+      if(ch==='"') inQ=true;
+      else if(ch===delim){ out.push(cur); cur=''; }
+      else cur+=ch;
+    }
+  }
+  out.push(cur);
+  return out.map(s=>s.trim());
+}
+function handleCsvImport(ev){
+  const file=ev.target.files[0];
+  ev.target.value='';
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    let text=String(e.target.result);
+    if(text.charCodeAt(0)===0xFEFF) text=text.slice(1);
+    const lines=text.split(/\r?\n/).filter(l=>l.trim());
+    if(lines.length<2){ toast('الملف فارغ أو بلا صفوف', true); return; }
+    const delim=lines[0].includes(';')?';':(lines[0].includes('\t')?'\t':',');
+    const head=csvSplit(lines[0], delim);
+    const col=n=>head.findIndex(h=>h===n);
+    const idx={id:col('id'), nom:col('اللقب'), prenom:col('الاسم'), nomp:col('الاسم باللاتينية'),
+      sex:col('الجنس'), dn:col('تاريخ الميلاد'), rip:col('RIP'), ss:col('رقم الضمان')};
+    if(idx.id<0||idx.nom<0||idx.prenom<0){ toast('صيغة غير معروفة — استخدم ملف «📄 تصدير Excel/CSV» كنموذج', true); return; }
+    const sexMap={'ذكر':'M','أنثى':'F','M':'M','F':'F','male':'M','female':'F'};
+    const updates=[], adds=[]; let skip=0;
+    for(let i=1;i<lines.length;i++){
+      const c=csvSplit(lines[i], delim);
+      const idVal=(c[idx.id]||'').trim();
+      const nomAr=c[idx.nom]||'', prenomAr=c[idx.prenom]||'';
+      if(!idVal || (!nomAr && !prenomAr)){ skip++; continue; }
+      const vals={
+        nom_ar:nomAr, prenom_ar:prenomAr,
+        nom_prenom:idx.nomp>=0?(c[idx.nomp]||''):'',
+        sex:idx.sex>=0?(sexMap[(c[idx.sex]||'').trim()]||''):'',
+        date_naissance:idx.dn>=0?(c[idx.dn]||''):'',
+        rip:idx.rip>=0?(c[idx.rip]||''):'',
+        num_ss:idx.ss>=0?(c[idx.ss]||''):''
+      };
+      const ex=DB.employees.find(x=>String(x.id)===idVal);
+      if(ex) updates.push({ex, vals});
+      else if(/^\d+$/.test(idVal) && !DB.employees.some(x=>x.id===+idVal)) adds.push({id:+idVal, vals});
+      else skip++;
+    }
+    if(!updates.length && !adds.length){ toast('لا توجد صفوف صالحة للاستيراد', true); return; }
+    openConfirmEx({
+      title:'📥 استيراد سجل الموظفين', yesLabel:`تنفيذ (${updates.length} تحديث · ${adds.length} إضافة)`,
+      html:`<div class="confirm-box" style="text-align:right">
+        <div class="detail-row"><span class="k">تحديث موظفين موجودين</span><span class="v">${updates.length}</span></div>
+        <div class="detail-row"><span class="k">إضافة موظفين جدد</span><span class="v">${adds.length}</span></div>
+        <div class="detail-row"><span class="k">صفوف متجاهَلة (بلا رقم/اسم)</span><span class="v">${skip}</span></div>
+        <p style="font-size:.72rem;color:var(--muted);margin-top:10px">⚠️ التحديث يشمل: الأسماء، الجنس، تاريخ الميلاد، RIP، رقم الضمان. الإجماليات تُحسب تلقائياً من القروض والمنح.</p>
+      </div>`,
+      onYes:()=>{
+        updates.forEach(u=>{ Object.assign(u.ex, u.vals); recalcEmp(u.ex.id); });
+        adds.forEach(a=>{
+          DB.employees.push({id:a.id, ...a.vals, statut_emploi:'يعمل', total_aide:0, aide_paye:0, total_credit:0, credit_paye:0, credit_restant:0, enfants_m:0, enfants_f:0});
+          recalcEmp(a.id);
+        });
+        saveDB(); renderHome(); rerenderCurrent();
+        toast(`تم الاستيراد ✓ (${updates.length} تحديث · ${adds.length} إضافة)`);
+      }
+    });
+  };
+  reader.readAsText(file, 'utf-8');
 }
 
 function renderGuide(){
   const tiles=[
-    {ic:'🏠',t:'الرئيسية',d:'إحصائيات عامة (الموظفون، المنح، القروض، التسديدات) ومؤشرات الأداء: نسبة الاسترداد، المتوسطات، والقروض المسددة/النشطة. أزرار سريعة للتصدير والاستيراد وإعادة البيانات الأصلية.'},
+    {ic:'🏠',t:'الرئيسية',d:'إحصائيات عامة ومؤشرات الأداء، مع لافتة تذكير بالنسخ الاحتياطي (تظهر منذ متى لم تُصدّر بياناتك)، وبطاقة خاصة لطلبات السلفة غير المرتبطة بموظف (إنشاء ملف أو ربطها بموجود).'},
     {ic:'🔍',t:'البحث الشامل',d:'ابحث عن موظف بالرقم أو الاسم بالعربية/اللاتينية أو RIP، وسيظهر لك أيضاً المنح والقروض المطابقة. بدون كتابة شيء تظهر قائمة جميع الموظفين.'},
-    {ic:'🎁',t:'المنح',d:'كل المنح (ميلاد، ختان، زواج، وفاة...) مع فلترة بالسنة والحالة والنوع، وترقيم صفحات (20 في الصفحة) وزر إضافة منحة سريع بأنواع جاهزة.'},
-    {ic:'💳',t:'القروض',d:'السلفات مرتبة حسب المتبقي، مع خيار «المتبقي فقط»، وإضافة قرض أو طلب سلفة (بسبب الطلب ورأي اللجنة).'},
-    {ic:'📊',t:'التقارير',d:'ملخص الميزانية ونسبة الاسترداد، توزيع المنح (مخطط دائري)، المنح حسب السنة والحالة، تدفق التسديدات، أعلى المستفيدين وأعلى 15 مديوناً، وأسباب طلبات السلف. قابل للطباعة والتصدير CSV.'},
-    {ic:'🖨️',t:'الطباعة والتصدير',d:'اطبع تقريراً شاملاً من صفحة التقارير، أو ملف موظف فردي من صفحته. صدّر البيانات كاملة بصيغة JSON أو سجل الموظفين بصيغة Excel/CSV.'},
+    {ic:'🎁',t:'المنح',d:'كل المنح مع فلترة بالسنة والحالة والنوع، وترقيم صفحات (20 في الصفحة) وزر إضافة منحة سريع بأنواع جاهزة.'},
+    {ic:'💳',t:'القروض',d:'السلفات مرتبة حسب المتبقي، مع خيار «المتبقي فقط» وإضافة قرض أو طلب سلفة. عند منح السلفة يمكن تسجيل رقم الشيك وتاريخه، وكل قرض نشط له خطة تسديد شهرية قابلة للطباعة (زر 📅 خطة في ملف الموظف).'},
+    {ic:'📊',t:'التقارير',d:'ملخص الميزانية ونسبتا استرداد (إجمالية + قابلة للتحصيل بعد استبعاد ديون المتقاعدين)، مخططات، أعلى المستفيدين وأعلى 15 مديوناً مع خيار «استبعاد المتقاعدين». قابل للطباعة والتصدير CSV.'},
+    {ic:'🧾',t:'الوصلات والطباعة',d:'اطبع وصل تسديد رسمي لكل عملية (زر 🧾 وصل في ملف الموظف) يتضمن المبلغ والقرض والمتبقي وخانات التوقيع، أو خطة تسديد، أو ملف موظف كامل، أو تقريراً شاملاً.'},
+    {ic:'📥',t:'استيراد CSV',d:'زر «📥 استيراد CSV» في الرئيسية يحدّث سجل الموظفين جماعياً من ملف Excel/CSV (بنفس صيغة التصدير): الأسماء، الجنس، الميلاد، RIP، الضمان — مع معاينة قبل التنفيذ.'},
+    {ic:'⚙️',t:'الحماية والإعدادات',d:'من ⚙️: تعيين رمز PIN يقفل التطبيق عند كل فتح (زر 🔒 للقفل الفوري)، إخفاء أرقام RIP (زر 🙈) في كل الشاشات والطباعة، اسم المستخدم الموثَّق في سجل الحالات، والوضع الليلي/النهاري (زر ☀️).'},
   ];
   document.getElementById('guide-body').innerHTML=`
     <div class="card">
@@ -1605,12 +2264,13 @@ function renderGuide(){
       <div class="section-title" style="margin-top:0"><span>⚠️ ملاحظات هامة</span></div>
       <div class="detail-row"><span class="k">علاقة السجلات</span><span class="v">كل منحة/قرض/تسديد/طلب مرتبط بموظف عبر رقمه #ID</span></div>
       <div class="detail-row"><span class="k">المتبقي</span><span class="v">يُحسب تلقائياً لكل موظف = إجمالي القروض − المسدد</span></div>
-      <div class="detail-row"><span class="k">نسبة الاسترداد</span><span class="v">= إجمالي التسديدات ÷ إجمالي القروض</span></div>
-      <div class="detail-row"><span class="k">النسخ الاحتياطي</span><span class="v">استخدم «⬇️ تصدير» دورياً واحتفظ بالملف بأمان</span></div>
+      <div class="detail-row"><span class="k">رفض التسديد الزائد</span><span class="v">لا يُقبل تسديد يجعل مجموع المسدد أكبر من مجموع القروض</span></div>
+      <div class="detail-row"><span class="k">تقاعد الموظف</span><span class="v">عند تغيير الحالة إلى «متقاعد» يُسجَّل التاريخ ورقم القرار ويظهر تنبيه بمبلغ الدين غير القابل للتحصيل</span></div>
+      <div class="detail-row"><span class="k">سجل الحالة</span><span class="v">كل تغيير في حالة الموظف يُوثَّق (التاريخ + المستخدم) في ملفه</span></div>
+      <div class="detail-row"><span class="k">النسخ الاحتياطي</span><span class="v">استخدم «⬇️ تصدير» دورياً — لافتة في الرئيسية تذكّرك إن تأخر التصدير</span></div>
       <div class="detail-row"><span class="k">استعادة الأصل</span><span class="v">زر «↺ الأصلية» يحذف كل التعديلات المحلية</span></div>
     </div>`;
 }
-
 init();
 </script>
 </body>

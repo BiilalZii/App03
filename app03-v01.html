@@ -407,8 +407,7 @@ function loadDB(){
 
 function init(){
   const src = loadDB();
-  // ensure arrays
-  ['employees','aides','credits','payments','credit_requests'].forEach(k=>{ if(!DB[k]) DB[k]=[]; });
+  normalizeDB();
   renderHome(); fillYears();
   document.getElementById('q').addEventListener('keydown', e => { if(e.key==='Enter') doSearch(); });
   if(src==='saved') toast('تم استعادة التعديلات المحفوظة');
@@ -540,6 +539,96 @@ function recalcEmp(id){
   e.total_aide = DB.aides.filter(a=>a.employee_id==id).reduce((s,a)=>s+(+a.montant||0),0);
   e.total_credit = DB.credits.filter(c=>c.employee_id==id).reduce((s,c)=>s+(+c.montant||0),0);
   e.credit_restant = DB.credits.filter(c=>c.employee_id==id).reduce((s,c)=>s+(+c.restant||0),0);
+  e.credit_paye = (+e.total_credit||0) - (+e.credit_restant||0);
+}
+
+/* ═══════ التسديدات: ربط بالقروض وتحديث المتبقي ═══════ */
+function nextCreditId(){
+  return DB.credits.reduce((m,c)=>Math.max(m,+c.id||0),0)+1;
+}
+function ensureCreditIds(){
+  let max=DB.credits.reduce((m,c)=>Math.max(m,+c.id||0),0);
+  DB.credits.forEach(c=>{ if(c.id==null){ c.id=++max; } });
+}
+function normalizeDB(){
+  ['employees','aides','credits','payments','credit_requests'].forEach(k=>{ if(!DB[k]) DB[k]=[]; });
+  ensureCreditIds();
+}
+function unpaidCredits(){ return DB.credits.filter(c=>nz(c.restant)>0); }
+function creditPersonLabel(c){
+  return (c.nom_ar||c.prenom_ar)?`${fmt(c.nom_ar)} ${fmt(c.prenom_ar)}`:`موظف #${c.employee_id}`;
+}
+function creditOptionLabel(c){
+  return `${fmt(c.type_credit)} ${fmt(c.annee)} · ${creditPersonLabel(c)} — متبقي ${money(c.restant)} دج`;
+}
+function creditCodeLabel(c){
+  return `${fmt(c.type_credit)} ${fmt(c.annee)} · #${c.id} · ${creditPersonLabel(c)}`;
+}
+function paymentCreditOptions(empId, includeId){
+  let list = DB.credits.filter(c=> nz(c.restant)>0 || (includeId!=null && c.id==includeId));
+  if(empId) list = [...list].sort((a,b)=>((a.employee_id==empId?0:1)-(b.employee_id==empId?0:1)));
+  return [
+    {v:'', t:'— اختر قرضاً/سلفة غير مسدد —'},
+    ...list.map(c=>({v:'credit:'+c.id, t:creditOptionLabel(c)})),
+    {v:'__custom', t:'✏️ إدخال رمز يدوي'},
+  ];
+}
+function paymentCreditFromVal(v){
+  if(v && v.indexOf('credit:')===0){
+    const c=DB.credits.find(x=>x.id==+v.slice(7));
+    if(c) return {credit_id:c.id, code_credit:creditCodeLabel(c)};
+  }
+  return {credit_id:null, code_credit:''};
+}
+function setEmpPicker(name, id){
+  const hidden=document.getElementById('f_'+name);
+  const search=document.getElementById('f_'+name+'_search');
+  const picked=document.getElementById('picked_'+name);
+  const e=DB.employees.find(x=>x.id==id);
+  if(!hidden||!e) return;
+  hidden.value=id;
+  if(search) search.value=`#${id} — ${fmt(e.nom_ar)} ${fmt(e.prenom_ar)}`;
+  if(picked) picked.textContent=`المحدد: #${id} · ${fmt(e.nom_ar)} ${fmt(e.prenom_ar)}`;
+  const fg=document.getElementById('fg_'+name); if(fg) fg.classList.remove('has-error');
+}
+function creditRemainingAfterChange(credit_id, delta){
+  const c=DB.credits.find(x=>x.id==credit_id); if(!c) return;
+  c.restant=Math.max(0, nz(c.restant)+delta);
+}
+function bindPaymentCreditSelect(){
+  const sel=document.getElementById('f_credit_ref'); if(!sel) return;
+  const manual=document.getElementById('fg_code_credit_manual');
+  const hintEl=document.getElementById('hint_credit_ref');
+  const montEl=document.getElementById('f_montant');
+  const detteEl=document.getElementById('f_dette');
+  const selectedCredit=()=>{
+    const v=sel.value;
+    if(v && v.indexOf('credit:')===0) return DB.credits.find(x=>x.id==+v.slice(7));
+    return null;
+  };
+  const refresh=()=>{
+    const c=selectedCredit();
+    if(manual) manual.style.display=(sel.value==='__custom')?'block':'none';
+    if(c){
+      const rest=nz(c.restant), mont=nz(montEl?montEl.value:0);
+      if(hintEl) hintEl.innerHTML=`المتبقي الحالي: <strong>${money(rest)} دج</strong>${mont>0?` — بعد التسديد: <strong>${money(Math.max(0,rest-mont))} دج</strong>`:''}`;
+      if(detteEl && mont>0) detteEl.value=Math.max(0,rest-mont);
+    } else if(sel.value==='__custom'){
+      if(hintEl) hintEl.textContent='أدخل رمز القرض يدوياً — لن يتم ربطه بسجل قرض تلقائياً';
+    } else {
+      if(hintEl) hintEl.textContent='اختر قرضاً غير مسدد ليتم خصم المبلغ من المتبقي تلقائياً';
+    }
+  };
+  sel.addEventListener('change', ()=>{
+    const c=selectedCredit();
+    if(c){
+      setEmpPicker('employee_id', c.employee_id);
+      if(montEl && !(nz(montEl.value)>0)) montEl.value=c.restant;
+    }
+    refresh();
+  });
+  if(montEl) montEl.addEventListener('input', refresh);
+  refresh();
 }
 
 function openEmployee(id){
@@ -661,7 +750,7 @@ function openModal({title, fields, onSave, saveLabel, extraHtml}){
 function renderField(f){
   if(f.type==='section') return `<div class="form-section">${f.label}</div>`;
   const req = f.required ? '<span class="req">*</span>' : '';
-  const hint = f.hint ? `<div class="hint">${f.hint}</div>` : '';
+  const hint = f.hint ? `<div class="hint" id="hint_${f.name}">${f.hint}</div>` : '';
   const err = `<div class="err-msg" id="err_${f.name}">مطلوب</div>`;
   if(f.type==='select'){
     const opts = (f.options||[]).map(o=>`<option value="${esc(o.v)}" ${String(o.v)===String(f.value)?'selected':''}>${esc(o.t)}</option>`).join('');
@@ -1003,7 +1092,7 @@ function showAddCredit(empId){
       const id=+vals.employee_id;
       if(!DB.employees.find(x=>x.id==id)){ toast('غير موجود', true); return; }
       const n=empName(id); const montant=+vals.montant||0;
-      DB.credits.unshift({employee_id:id, type_credit:vals.type_credit, annee:+vals.annee||null,
+      DB.credits.unshift({id:nextCreditId(), employee_id:id, type_credit:vals.type_credit, annee:+vals.annee||null,
         montant, restant:vals.restant===''?montant:(+vals.restant||0), notes:vals.notes, nom_ar:n.nom_ar, prenom_ar:n.prenom_ar});
       recalcEmp(id); saveDB(); closeModal();
       if(currentEmpId==id) openEmployee(id); else toast('تمت الإضافة');
@@ -1034,43 +1123,72 @@ function confirmDeleteCredit(empId, localIdx){
   }});
 }
 function showAddPayment(empId){
+  window._onModalReady = bindPaymentCreditSelect;
   openModal({
     title:'إضافة تسديد', saveLabel:'إضافة',
     fields:[
       {name:'employee_id', label:'الموظف', required:true, picker:true, value:empId||''},
-      {name:'montant', label:'المبلغ', required:true, type:'number', inputmode:'numeric'},
+      {name:'montant', label:'المبلغ (دج)', required:true, type:'number', inputmode:'numeric'},
       {name:'date_pay', label:'التاريخ', type:'date', value:new Date().toISOString().slice(0,10)},
-      {name:'code_credit', label:'رمز القرض'},
-      {name:'dette', label:'المتبقي بعد', type:'number', inputmode:'numeric'},
+      {name:'credit_ref', label:'رمز القرض / السلفة غير المسددة', type:'select', value:'', options:paymentCreditOptions(empId), hint:'اختر قرضاً غير مسدد ليتم خصم المبلغ من المتبقي تلقائياً'},
+      {name:'code_credit_manual', label:'رمز القرض اليدوي', placeholder:'أدخل الرمز يدوياً'},
+      {name:'dette', label:'المتبقي بعد (دج)', type:'number', inputmode:'numeric'},
     ],
     onSave: vals=>{
       const id=+vals.employee_id; const n=empName(id);
-      DB.payments.unshift({employee_id:id, montant:+vals.montant||0, date_pay:vals.date_pay,
-        code_credit:vals.code_credit, dette:+vals.dette||0, ref_pay:'', nom_ar:n.nom_ar, prenom_ar:n.prenom_ar});
-      saveDB(); closeModal(); if(currentEmpId==id) openEmployee(id); else toast('تمت الإضافة');
+      const montant=+vals.montant||0;
+      const link=paymentCreditFromVal(vals.credit_ref);
+      const code=link.code_credit || (vals.credit_ref==='__custom'?(vals.code_credit_manual||'').trim():'');
+      DB.payments.unshift({employee_id:id, montant, date_pay:vals.date_pay,
+        code_credit:code, credit_id:link.credit_id, dette:+vals.dette||0, ref_pay:'', nom_ar:n.nom_ar, prenom_ar:n.prenom_ar});
+      if(link.credit_id!=null){
+        creditRemainingAfterChange(link.credit_id, -montant);
+        const c=DB.credits.find(x=>x.id==link.credit_id);
+        if(c && c.employee_id!=id) recalcEmp(c.employee_id);
+      }
+      recalcEmp(id); saveDB(); closeModal();
+      if(currentEmpId==id) openEmployee(id); else toast('تمت الإضافة ✓');
     }
   });
 }
 function showEditPayment(empId, localIdx){
   const list=DB.payments.filter(p=>p.employee_id==empId); const p=list[localIdx]; if(!p) return;
+  const curVal = p.credit_id!=null ? ('credit:'+p.credit_id) : (p.code_credit ? '__custom' : '');
+  window._onModalReady = bindPaymentCreditSelect;
   openModal({
     title:'تعديل تسديد', saveLabel:'حفظ',
     fields:[
-      {name:'montant', label:'المبلغ', required:true, type:'number', value:p.montant??''},
+      {name:'montant', label:'المبلغ (دج)', required:true, type:'number', value:p.montant??''},
       {name:'date_pay', label:'التاريخ', type:'date', value:(p.date_pay||'').toString().slice(0,10)},
-      {name:'code_credit', label:'رمز القرض', value:p.code_credit??''},
-      {name:'dette', label:'المتبقي بعد', type:'number', value:p.dette??''},
+      {name:'credit_ref', label:'رمز القرض / السلفة غير المسددة', type:'select', value:curVal, options:paymentCreditOptions(empId, p.credit_id), hint:'اختر قرضاً غير مسدد ليتم خصم المبلغ من المتبقي تلقائياً'},
+      {name:'code_credit_manual', label:'رمز القرض اليدوي', value:p.code_credit||''},
+      {name:'dette', label:'المتبقي بعد (دج)', type:'number', value:p.dette??''},
     ],
     onSave: vals=>{
-      Object.assign(p,{montant:+vals.montant||0, date_pay:vals.date_pay, code_credit:vals.code_credit, dette:+vals.dette||0});
+      const montant=+vals.montant||0;
+      const oldCid=p.credit_id, oldMontant=nz(p.montant);
+      if(oldCid!=null) creditRemainingAfterChange(oldCid, +oldMontant);
+      const link=paymentCreditFromVal(vals.credit_ref);
+      const code=link.code_credit || (vals.credit_ref==='__custom'?(vals.code_credit_manual||'').trim():'');
+      Object.assign(p,{montant, date_pay:vals.date_pay, code_credit:code, credit_id:link.credit_id, dette:+vals.dette||0});
+      if(link.credit_id!=null) creditRemainingAfterChange(link.credit_id, -montant);
+      recalcEmp(empId);
+      if(oldCid!=null && oldCid!=link.credit_id){ const c=DB.credits.find(x=>x.id==oldCid); if(c) recalcEmp(c.employee_id); }
+      if(link.credit_id!=null){ const c=DB.credits.find(x=>x.id==link.credit_id); if(c && c.employee_id!=empId) recalcEmp(c.employee_id); }
       saveDB(); closeModal(); openEmployee(empId);
     }
   });
 }
 function confirmDeletePayment(empId, localIdx){
-  openConfirm({title:'حذف تسديد', message:'حذف هذا التسديد؟', onYes:()=>{
+  openConfirm({title:'حذف تسديد', message:'حذف هذا التسديد؟ سيُعاد المبلغ إلى المتبقي تلقائياً.', onYes:()=>{
     const list=DB.payments.filter(p=>p.employee_id==empId); const p=list[localIdx]; if(!p) return;
-    DB.payments=DB.payments.filter(x=>x!==p); saveDB(); openEmployee(empId);
+    DB.payments=DB.payments.filter(x=>x!==p);
+    if(p.credit_id!=null){
+      creditRemainingAfterChange(p.credit_id, +nz(p.montant));
+      const c=DB.credits.find(x=>x.id==p.credit_id);
+      if(c && c.employee_id!=empId) recalcEmp(c.employee_id);
+    }
+    recalcEmp(empId); saveDB(); openEmployee(empId);
   }});
 }
 
@@ -1156,7 +1274,7 @@ function handleImport(ev){
     try{
       const d=JSON.parse(e.target.result);
       if(!d.employees) throw new Error('صيغة غير صحيحة');
-      DB=d; ['aides','credits','payments','credit_requests'].forEach(k=>{if(!DB[k])DB[k]=[];});
+      DB=d; normalizeDB();
       saveDB(); fillYears(); renderHome(); toast('تم الاستيراد ✓');
     }catch(err){ toast('فشل: '+err.message, true); }
   };
@@ -1171,7 +1289,7 @@ function resetData(){
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem('social_db_v2');
       DB=JSON.parse(document.getElementById('db-data').textContent);
-      fillYears(); renderHome(); toast('تمت الاستعادة');
+      normalizeDB(); fillYears(); renderHome(); toast('تمت الاستعادة');
     }
   });
 }

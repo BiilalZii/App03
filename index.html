@@ -283,10 +283,20 @@ body.light .note-banner.ok{background:#dcfce7;border-color:#22c55e;color:#166534
       <option value="ge60">60 سنة فأكثر</option>
       <option value="unknown">بدون تاريخ ميلاد</option>
     </select>
+    <select id="emp-rip" onchange="doSearch()">
+      <option value="">كل حالات RIP</option>
+      <option value="err">⚠️ بها أخطاء</option>
+      <option value="missing">بدون RIP</option>
+      <option value="length">طول خاطئ</option>
+      <option value="chars">غير رقمي</option>
+      <option value="dup">مكرر</option>
+      <option value="ok">سليم</option>
+    </select>
     <button class="btn btn-outline btn-sm" onclick="clearEmpFilters()">مسح الفلاتر</button>
   </div>
   <div class="btn-row">
     <button class="btn btn-primary btn-sm" onclick="showAddEmployee()">＋ إضافة موظف</button>
+    <button class="btn btn-green btn-sm" onclick="detectAllGenders()">⚡ استكمال الجنس من الأسماء</button>
   </div>
   <div id="search-results"></div>
 </div>
@@ -551,20 +561,308 @@ function empAgeBadge(e){
   const a=ageOf(e.date_naissance);
   return a!=null?`<span class="badge gray">${a} سنة</span>`:'';
 }
-function empFilterPredicate(gSel, aSel){
+/* ═══════════ ⚡ كشف الجنس من الاسم + تحقق RIP (20 رقماً) + هاتف/بريد ═══════════ */
+/* ==== MERGE-BLOCK-START ==== */
+const MALE_NAMES_AR=`محمد احمد أحمد امحمد محمود مهدي علي عمر عثمان حمزة اسامة بلال زكريا زكرياء سليمان سليم موسى عيسى يحيى
+ادريس اسماعيل يعقوب يونس داود شعيب لقمان ابراهيم براهيم رشيد كريم سمير نبيل جمال فؤاد فادي
+فاروق فتحي عادل خالد وليد سامي هشام عمار عصام ايمن ايوب انس امين انيس الياس ادم نوح طه طارق
+صالح صابر ضياء رياض رضا رفيق رمضان رؤوف زهير سعد سعيد سفيان شريف شكري شادي شهاب صهيب صادق
+عامر عباس العربي عزالدين علاء عمران عمرو عيد غسان غازي فايز فريد فوزي فيصل قاسم كمال كامل
+لطفي لؤي لخضر ماجد مالك ماهر مجدي مجيد محسن مختار مراد مروان مسعود مصطفى مصعب معاذ معتز معز
+مفتاح منصف منصور منير مهند ناجي ناصر نادر نزار نعمان نعيم نوفل نذير هادي هارون هاني هيثم وائل
+وديع ياسر ياسين يزيد زياد اياد يوسف سالم حسين حسن حسام حاتم الحارث حكيم حليم حمدي حميد حماد حيدر خليل
+رائد رامي رامز راغب رفعت زيد فرحات فاضل رابح لزهر لونيس ماسينيسا يوغرتن مولود مبارك مبروك
+مرزوق عمروش عميروش علال بلعيد بوعلام بوجمعة بوزيد قدور حمو الطاهر الطيب الأمين أمين السعيد
+الخير العيد العابدين جيلالي تيجاني ريان زكي طلحة معاوية عتبة نورالدين نوردين بشير لمين الشيخ فارس
+يحي صحراوي طالب جمعة ثامر خيثر عطاءالله عطية خليفة بولفعة بولرباح بونوة بن شهرة بن السايح حرزالله بودربالة
+عبدالرحمان عبدالرحمن عبدالله عبدالقادر عبدالعزيز عبدالحميد عبدالمجيد عبدالمالك عبدالغاني عبدالرزاق
+عبدالوهاب عبدالحفيظ عبدالسلام عبدالحق عبدالرؤوف`.trim().split(/\s+/);
+
+const FEMALE_NAMES_AR=`فاطمة فطومة فادمة فتيحة امينة امنة خديجة مريم عائشة زينب نورة نورا سناء سنية سارة ليلى هدى
+ياسمين ملاك ملك اماني ايمان نسرين سمية نبيلة جميلة خولة رحمة شيماء بشرى اسماء حنان كريمة سامية
+داليا دالية امال امل نادية سعاد فريال وئام عزيزة رشيدة سعيدة كلثوم زهور زهرة وردة نجلاء نجاة
+نجوى نوال هبة هند هيام هيفاء زينة زبيدة زهية زكية زليخة سلمى سلوى سهام سحر سهير سهيرة شروق جيهان
+شريفة شفيقة صابرين عايدة عبلة علياء عواطف غالية غادة فريدة فوزية كوثر ليان لينا لبنى لطيفة زهراء
+منيرة منية منال محجوبة مسعودة مباركة مرزوقة نعيمة نورية هاجر هالة هانية رقية راوية رحاب
+ريم رانيا رجاء حسناء حورية خيرة دنيا دليلة ديانا دينا جليلة جمانة جوهرة حبيبة رابحة روضة رميساء
+سكينة صالحة طيبة فلة باية وريدة ماسة تاوس ذكرى منى لمى نهى آية اروى فداء غيداء آلاء سمر ايناس
+اسمهان نورهان مديحة نفيسة خالدة سميرة وسيلة فيروز دعاء حياة الهدى
+ذهيبة ذهبة ذهبية حدة زوبيدة يمينة ضاوية فاطنة`.trim().split(/\s+/);
+
+const AMBIG_NAMES_AR=`وسام صباح نور زين حميدة احميدة`.trim().split(/\s+/);
+
+const MALE_NAMES_LATIN=`mohamed mohammed muhammed muhammad mohammad ahmed ahmet hamed mahmoud mehdi ali aly omar oumar othmane
+otmane hamza bilal zineddine zinedine noureddine nouredine nordine djamel jamel djawad jawad fouad foad
+foued fathi fethi adil adel khaled waleed walid sami hichem hacene hocine houcine riad riyad riadh reda
+ridha sofiane sofian soufiane sofien selim salim slim slimane said saad salah sabri tarek tarik toufik
+tewfik kamel karim hakim kacem mokhtar moukhtar messaoud mounir mourad marouane marouen marwen malek
+amine ammar ayoub anis elias ilyas ilyes lyes islam islem iyad yazid ziad zoubir zouhair zoheir zakaria
+zaki chaabane cherif chokri chouaib salem nadir nabil nazim nizar rafik rabah rezki redouane ramdane
+ramzi younes yacine yassine youssef wael kader abdelkader abdelhak abdelmalek abdelmadjid bachir tahar
+lamine fares abdelhamid abderrahmane abderahmane abdelrahmane abderrahim abdellah abdenour abdelwahab
+abdelrazak abderrazak abdelghani abdelaziz abdelkrim abdallah aissa akram ayman imed imad adam mouad
+rayan rayane mostafa mustapha mostapha moustafa mhamed mohcine muhend mhand arezki larbi lakhdar
+belkacem belgacem belaid bouzid boualem boudjema brahim youcef yusuf djilali tidjani mokrane kaci
+massinissa masinissa yugurten jugurtha takfarinas mahfoud anouar fawzi farid
+sahraoui taleb djemaa thamer khider atallah attalah attia khalifa boufafaa boulerbah bounoua benchohra bensayah benharzallah bouderbala`.trim().split(/\s+/);
+
+const FEMALE_NAMES_LATIN=`fatima fatma fadhma fatiha amina amena khadidja khadija meriem mariem maryem myriam miriam mariam meryem
+aicha aida ayda zineb zoubida zohra zahra zahia zhour noura sanaa sana sania sarah sarra leila layla lila
+houda hoda yasmine yasmina jasmine malak imane imene imen iman ilham ilhem nesrine nesrin nisrine souad
+soad samia samira nabila djamila khaoula rahma chaima chaimaa bouchra asma asmaa hanane hanan karima
+dalia dalya amel amal nadia nadiya frial ferial feriel wiame wiam amira aziza rachida saida koultoum
+koulthoum kalthoum selma salma salwa sonia sabrina safia loubna lobna lamia lamya lilia lina linda
+louiza louisa maria mounira mounia malika moufida houria houriya hafida hafsa halima hamida hasna hind
+ines iness jamila jemila kenza kheira khadra kahina kahena dihia lydia nadjet naima najat najoua nawal
+nora nesma ouarda warda rania rawya rima safia salima soumia soumaya tassadit wafa wafaa wahiba wassila
+widad yamina zahia zehour massa taos fella baya ourida amani mona rana noha aya arwa
+dehiba dahba hadda zoubida rachida samia kheira fatima zohra daouia jihane fatna`.trim().split(/\s+/);
+
+const AMBIG_NAMES_LATIN=`wissam wassim sabah nour hayet zine hamida ahmida`.trim().split(/\s+/);
+
+const MALE_NAME_SET=new Set(MALE_NAMES_AR.concat(MALE_NAMES_LATIN).map(normNameKey).filter(Boolean));
+const FEMALE_NAME_SET=new Set(FEMALE_NAMES_AR.concat(FEMALE_NAMES_LATIN).map(normNameKey).filter(Boolean));
+const AMBIG_NAME_SET=new Set(AMBIG_NAMES_AR.concat(AMBIG_NAMES_LATIN).map(normNameKey).filter(Boolean));
+const LATIN_MALE_A_END=new Set(['hamza','reda','ridha','aissa','mustapha','mustafa','mostapha','moustafa']);
+
+function toLatinDigits(s){
+  return String(s==null?'':s)
+    .replace(/[٠-٩]/g, d=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))
+    .replace(/[۰-۹]/g, d=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)));
+}
+function normNameKey(s){
+  return String(s==null?'':s)
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g,'')
+    .replace(/[أإآٱ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي')
+    .replace(/ئ/g,'ي').replace(/ؤ/g,'و').replace(/ء/g,'')
+    .toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9\u0600-\u06FF]/g,'');
+}
+/* كشف الجنس من نص اسم (عربي أو لاتيني) — يعيد 'M' أو 'F' أو null */
+function detectGenderText(name){
+  const toks=String(name||'').trim().split(/[\s\-_.\/,،؛;:()]+/).filter(t=>/[a-zA-Z\u0600-\u06FF]/.test(t));
+  if(!toks.length) return null;
+  const kFirst=normNameKey(toks[0]);
+  const firstAmbig=AMBIG_NAME_SET.has(kFirst)||(kFirst.length>3&&kFirst.indexOf('ال')===0&&AMBIG_NAME_SET.has(kFirst.slice(2)));
+  let firstM=-1, firstF=-1;
+  for(let i=0;i<toks.length;i++){
+    const t=toks[i];
+    const isAr=/[\u0600-\u06FF]/.test(t);
+    const k=normNameKey(t);
+    if(!k) continue;
+    if(isAr){
+      if(k==='بن') continue;
+      if(k==='بنت'||k==='ام'){ if(firstF<0) firstF=i; continue; }
+      if(k==='الدين'||k==='دين'||k==='العابدين'){ if(firstM<0) firstM=i; continue; }
+      if(k.startsWith('عبد')){ if(firstM<0) firstM=i; continue; }
+    }
+    let g='';
+    if(MALE_NAME_SET.has(k)) g='M';
+    else if(FEMALE_NAME_SET.has(k)) g='F';
+    else if(AMBIG_NAME_SET.has(k)) g='A';
+    else if(isAr&&k.length>3&&k.indexOf('ال')===0){
+      const s=k.slice(2);
+      if(MALE_NAME_SET.has(s)) g='M';
+      else if(FEMALE_NAME_SET.has(s)) g='F';
+      else if(AMBIG_NAME_SET.has(s)) g='A';
+    }
+    if(!g) continue;
+    if(firstAmbig&&i>0&&g!=='F') continue;
+    if(g==='M'){ if(firstM<0) firstM=i; continue; }
+    if(g==='F'){ if(firstF<0) firstF=i; continue; }
+  }
+  if(firstM>=0&&firstF>=0) return firstM<firstF?'M':'F';
+  if(firstM>=0) return 'M';
+  if(firstF>=0) return 'F';
+  /* قواعد احتياطية محافظة على أول كلمة */
+  const t0=toks[0], k0=normNameKey(t0), isAr0=/[\u0600-\u06FF]/.test(t0);
+  if(AMBIG_NAME_SET.has(k0)) return null;   /* اسم ثنائي الجنس: لا نُقرر آلياً */
+  if(isAr0){
+    if(k0.startsWith('عبد')) return 'M';
+    const tail=t0.replace(/[\u064B-\u065F\u0670\u0640]/g,'').replace(/[أإآٱ]/g,'ا');
+    if(/ة$/.test(tail)) return 'F';
+  } else {
+    if(/(a|ah|ha)$/.test(k0)&&!LATIN_MALE_A_END.has(k0)) return 'F';
+  }
+  return null;
+}
+/* كشف الجنس لموظف: الاسم الشخصي بالعربية أولاً ثم الاسم اللاتيني (اللقب ثم الاسم) */
+function detectGenderForEmp(e){
+  if(!e) return null;
+  const pre=String(e.prenom_ar||'').trim();
+  if(pre&&normNameKey(pre)!=='inconnu'){
+    const d=detectGenderText(pre);
+    if(d) return d;
+  }
+  const lat=String(e.nom_prenom||'').trim();
+  if(lat&&normNameKey(lat)!=='inconnu'){
+    const toks=lat.split(/[\s\-.]+/).filter(t=>/[a-zA-Z]/.test(t));
+    /* الصيغة اللاتينية «اللقب ثم الاسم الشخصي»: نعتمد الاسم الأخير فقط (لا اللقب) */
+    if(toks.length){
+      /* «BEN X» نسبة لاسم الأم/الأب → صاحبها ذكر */
+      if(toks.length>=2 && /^ben$/i.test(toks[toks.length-2])) return 'M';
+      const dLast=detectGenderText(toks[toks.length-1]);
+      if(dLast) return dLast;
+    }
+  }
+  return null;
+}
+/* حالة RIP: 20 رقماً بالضبط + غير مكرر */
+function ripStatusOf(e){
+  const r=toLatinDigits(String(e&&e.rip!=null?e.rip:'')).replace(/[\s\-.]/g,'');
+  if(!r) return {ok:false, code:'missing', label:'بدون RIP', short:'مفقود'};
+  if(!/^\d+$/.test(r)) return {ok:false, code:'chars', label:'RIP غير رقمي', short:'غير رقمي'};
+  if(r.length!==20) return {ok:false, code:'length', label:'طول RIP: '+r.length+' من 20', short:r.length+'/20'};
+  const dup=((typeof DB!=='undefined'&&DB&&DB.employees)||[]).find(x=>x&&x.id!==e.id&&toLatinDigits(String(x.rip==null?'':x.rip)).replace(/[\s\-.]/g,'')===r);
+  if(dup) return {ok:false, code:'dup', label:'رقم RIP مكرر مع '+esc(dup.prenom_ar&&dup.prenom_ar!=='inconnu'?dup.prenom_ar:(dup.nom_ar||('#'+dup.id))), short:'مكرر'};
+  return {ok:true, code:'ok', label:'سليم ✓ 20 رقماً', short:'سليم'};
+}
+function ripBadgeMini(e){
+  const s=ripStatusOf(e);
+  if(s.ok) return '';
+  return `<span class="badge ${s.code==='missing'?'orange':'red'}" title="${s.label}">RIP: ${s.short}</span>`;
+}
+function ripBadgeFull(e){
+  const s=ripStatusOf(e);
+  return s.ok?`<span class="badge green">✓ 20 رقماً</span>`:`<span class="badge ${s.code==='missing'?'orange':'red'}">${s.label}</span>`;
+}
+/* الهاتف والبريد */
+function normalizePhoneDZ(raw){
+  let p=toLatinDigits(String(raw==null?'':raw)).replace(/[\s\-().]/g,'');
+  if(!p) return '';
+  if(p[0]==='+') p='00'+p.slice(1);
+  if(p.indexOf('00')===0) p=p.slice(2);
+  if(/^213\d{9}$/.test(p)) p='0'+p.slice(3);
+  return p;
+}
+function phoneStatusOf(e){
+  const p=String(e&&e.tel||'').trim();
+  if(!p) return {ok:false, label:'بدون رقم'};
+  if(/^0[567]\d{8}$/.test(p)) return {ok:true, label:'موبايل'};
+  if(/^0[2-49]\d{6,8}$/.test(p)) return {ok:true, label:'أرضي'};
+  return {ok:false, label:'صيغة غير صحيحة'};
+}
+function emailOk(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v||'').trim()); }
+/* تحذير لطيف قبل الحفظ عند وجود مشاكل في RIP/الهاتف/البريد */
+function warnInvalidEmpInfo(vals, proceed){
+  const probs=[];
+  const rip=toLatinDigits(String(vals.rip||'')).replace(/[\s\-.]/g,'');
+  if(rip&&!/^\d+$/.test(rip)) probs.push('RIP يحتوي على محارف غير رقمية');
+  else if(rip&&rip.length!==20) probs.push('RIP يجب أن يكون 20 رقماً بالضبط (المُدخل: '+rip.length+' رقماً)');
+  const tel=normalizePhoneDZ(vals.tel);
+  if(tel&&!phoneStatusOf({tel}).ok) probs.push('رقم الهاتف بصيغة غير معتادة: '+tel);
+  if(vals.email&&!emailOk(vals.email)) probs.push('البريد الإلكتروني غير صالح: '+vals.email);
+  if(!probs.length){ proceed(); return; }
+  openConfirmEx({
+    title:'⚠️ مراجعة البيانات قبل الحفظ', yesLabel:'حفظ على أي حال', yesClass:'btn-primary',
+    html:`<div class="confirm-box" style="text-align:right">
+      <p style="margin-bottom:8px">يرجى مراجعة النقاط التالية:</p>
+      ${probs.map(p=>`<div class="detail-row"><span class="k">•</span><span class="v">${esc(p)}</span></div>`).join('')}
+      <p style="font-size:.72rem;color:var(--muted);margin-top:10px">يمكنك المتابعة إذا كان ذلك مقصوداً.</p>
+    </div>`,
+    onYes:proceed
+  });
+}
+/* ⚡ استكمال الجنس الناقص للجميع من الأسماء */
+function detectAllGenders(){
+  const missing=DB.employees.filter(e=>!e.sex);
+  if(!missing.length){ toast('كل الموظفين لديهم جنس محدد ✓'); return; }
+  const fillable=missing.filter(e=>detectGenderForEmp(e));
+  if(!fillable.length){ toast('لم يُمكن التعرف على جنس أيٍّ من الأسماء الناقصة', true); return; }
+  openConfirmEx({
+    title:'⚡ استكمال الجنس من الأسماء',
+    yesLabel:`تعبئة ${fillable.length} موظفاً`, yesClass:'btn-green',
+    html:`<div class="confirm-box" style="text-align:right">
+      <div class="detail-row"><span class="k">موظفون بدون جنس</span><span class="v">${missing.length}</span></div>
+      <div class="detail-row"><span class="k">سيُستكمل من الاسم تلقائياً</span><span class="v" style="color:#4ade80">${fillable.length}</span></div>
+      <div class="detail-row"><span class="k">يبقى تحديدها يدوياً</span><span class="v">${missing.length-fillable.length}</span></div>
+      <p style="font-size:.72rem;color:var(--muted);margin-top:10px">يعتمد الاستنتاج على قاموس أسماء جزائرية وعربية — يُنصح بمراجعة النتائج عبر فلتر «كل الأجناس ← غير محدد».</p>
+    </div>`,
+    onYes:()=>{
+      let n=0;
+      DB.employees.forEach(e=>{ if(!e.sex){ const g=detectGenderForEmp(e); if(g){ e.sex=g; n++; } } });
+      saveDB(); renderHome(); rerenderCurrent();
+      toast(`تم استكمال جنس ${n} موظفاً من الاسم ✓`);
+    }
+  });
+}
+/* ربط النموذج: اقتراح الجنس أثناء الكتابة + تلميحات RIP/الهاتف/البريد */
+function bindEmpExtras(isAdd){
+  const pre=document.getElementById('f_prenom_ar');
+  const nom=document.getElementById('f_nom_ar');
+  const lat=document.getElementById('f_nom_prenom');
+  const sex=document.getElementById('f_sex');
+  const rip=document.getElementById('f_rip');
+  const tel=document.getElementById('f_tel');
+  const mail=document.getElementById('f_email');
+  const setHint=(id,txt,color)=>{ const h=document.getElementById('hint_'+id); if(h){ h.textContent=txt; h.style.color=color||''; } };
+  if(sex){
+    let touched=!!sex.value&&!isAdd;
+    sex.addEventListener('change',()=>{ touched=true; setHint('sex','اختيار يدوي ✍️'); });
+    const updSex=()=>{
+      const d=detectGenderForEmp({prenom_ar:pre?pre.value:'', nom_ar:nom?nom.value:'', nom_prenom:lat?lat.value:''});
+      if(touched){ if(d) setHint('sex','اختيار يدوي (الاقتراح من الاسم: '+(d==='M'?'ذكر':'أنثى')+')'); return; }
+      if(d){ sex.value=d; setHint('sex','⚡ مستنتج تلقائياً من الاسم: '+(d==='M'?'ذكر':'أنثى'), '#4ade80'); }
+      else if((pre&&pre.value.trim())||(lat&&lat.value.trim())) setHint('sex','⚠️ لم يُتعرف على الجنس من الاسم — اختر يدوياً', '#fcd34d');
+      else setHint('sex','⚡ يُستنتج تلقائياً من الاسم');
+    };
+    [pre,nom,lat].forEach(el=>{ if(el) el.addEventListener('input',updSex); });
+    updSex();
+  }
+  if(rip){
+    const updRip=()=>{
+      const v=toLatinDigits(String(rip.value||'')).replace(/[\s\-.]/g,'');
+      if(!v){ setHint('rip','20 رقماً بالضبط'); return; }
+      if(!/^\d+$/.test(v)){ setHint('rip','⚠️ محارف غير رقمية','#fca5a5'); return; }
+      if(v.length!==20){ setHint('rip','⚠️ يجب 20 رقماً — المُدخل '+v.length,'#fca5a5'); return; }
+      const dup=DB.employees.find(x=>x&&toLatinDigits(String(x.rip==null?'':x.rip)).replace(/[\s\-.]/g,'')===v);
+      if(dup){ setHint('rip','⚠️ الرقم مستعمل عند '+esc(dup.prenom_ar||dup.nom_ar||('#'+dup.id)),'#fca5a5'); return; }
+      setHint('rip','✓ سليم — 20 رقماً','#4ade80');
+    };
+    rip.addEventListener('input',updRip); updRip();
+  }
+  if(tel){
+    const updTel=()=>{
+      const p=normalizePhoneDZ(tel.value);
+      if(!p){ setHint('tel','مثال: 0550123456 أو +213550123456'); return; }
+      setHint('tel', phoneStatusOf({tel:p}).ok?'✓ رقم صالح':'⚠️ صيغة غير معتادة (موبايل: 05/06/07 + 8 أرقام)', phoneStatusOf({tel:p}).ok?'#4ade80':'#fca5a5');
+    };
+    tel.addEventListener('input',updTel); updTel();
+  }
+  if(mail){
+    const updMail=()=>{
+      const v=String(mail.value||'').trim();
+      if(!v){ setHint('email','مثال: name@example.dz'); return; }
+      setHint('email', emailOk(v)?'✓ بريد صالح':'⚠️ صيغة غير صحيحة', emailOk(v)?'#4ade80':'#fca5a5');
+    };
+    mail.addEventListener('input',updMail); updMail();
+  }
+}
+function gotoRipFilter(v){ const s=document.getElementById('emp-rip'); if(s) s.value=v; showPage('search'); }
+function gotoSexFilter(){ const s=document.getElementById('emp-sex'); if(s) s.value='none'; showPage('search'); }
+/* ==== MERGE-BLOCK-END ==== */
+
+function empFilterPredicate(gSel, aSel, rSel){
   const g=document.getElementById(gSel).value;
   const a=document.getElementById(aSel).value;
+  const r=rSel?document.getElementById(rSel).value:'';
   return e => {
     if(g && (g==='none' ? !!e.sex : e.sex!==g)) return false;
     if(a && !ageMatches(a, ageOf(e.date_naissance))) return false;
+    if(r){
+      const rs=ripStatusOf(e);
+      if(r==='err' && rs.ok) return false;
+      if(r==='ok' && !rs.ok) return false;
+      if(r!=='err' && r!=='ok' && rs.code!==r) return false;
+    }
     return true;
   };
 }
-function applyEmpFilters(list, gSel, aSel){
-  return list.filter(empFilterPredicate(gSel, aSel));
+function applyEmpFilters(list, gSel, aSel, rSel){
+  return list.filter(empFilterPredicate(gSel, aSel, rSel));
 }
 function clearEmpFilters(){
-  ['emp-sex','emp-age'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['emp-sex','emp-age','emp-rip'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   doSearch();
 }
 function clearRepEmpFilters(){
@@ -737,6 +1035,26 @@ function renderHome(){
         <div class="stat"><div class="n" style="color:var(--warn)">${actifs}</div><div class="l">قروض نشطة (متبقي &gt; 0)</div></div>
       </div>
     </div>`;
+  /* 🧪 جودة البيانات */
+  if(perf){
+    const ripErrN=DB.employees.filter(x=>!ripStatusOf(x).ok).length;
+    const ripMissN=DB.employees.filter(x=>ripStatusOf(x).code==='missing').length;
+    const noSexN=DB.employees.filter(x=>!x.sex).length;
+    const noTelN=DB.employees.filter(x=>!x.tel).length;
+    const noMailN=DB.employees.filter(x=>!x.email).length;
+    perf.innerHTML+=`
+    <div class="card" style="margin-top:10px">
+      <div class="section-title" style="margin-top:0"><span>🧪 جودة البيانات</span></div>
+      <div class="stats">
+        <div class="stat" style="cursor:pointer" onclick="gotoRipFilter('err')"><div class="n" style="color:var(--danger)">${ripErrN}</div><div class="l">⚠️ أخطاء RIP</div></div>
+        <div class="stat" style="cursor:pointer" onclick="gotoRipFilter('missing')"><div class="n" style="color:var(--warn)">${ripMissN}</div><div class="l">بدون RIP</div></div>
+        <div class="stat" style="cursor:pointer" onclick="gotoSexFilter()"><div class="n" style="color:var(--warn)">${noSexN}</div><div class="l">جنس غير محدد</div></div>
+        <div class="stat"><div class="n">${noTelN}</div><div class="l">بدون هاتف</div></div>
+        <div class="stat"><div class="n">${noMailN}</div><div class="l">بدون بريد</div></div>
+      </div>
+    </div>`;
+  }
+
   const recent = [...DB.aides].sort((a,b)=>(b.annee||0)-(a.annee||0)).slice(0,8);
   document.getElementById('recent-aides').innerHTML = recent.length ? recent.map(a => `
     <div class="item" onclick="openEmployee(${a.employee_id})">
@@ -748,17 +1066,20 @@ function renderHome(){
 function doSearch(){
   const q = document.getElementById('q').value.trim().toLowerCase();
   const box = document.getElementById('search-results');
-  const empPred = empFilterPredicate('emp-sex','emp-age');
-  const hasEmpFilter = !!(document.getElementById('emp-sex').value || document.getElementById('emp-age').value);
+  const empPred = empFilterPredicate('emp-sex','emp-age','emp-rip');
+  const hasEmpFilter = !!(document.getElementById('emp-sex').value || document.getElementById('emp-age').value || document.getElementById('emp-rip').value);
   const subPasses = rec => { const e=DB.employees.find(x=>x.id==rec.employee_id); return e?empPred(e):!hasEmpFilter; };
 
   const empRow = e => `
     <div class="item" onclick="openEmployee(${e.id})">
       <div class="name">${fmt(e.nom_ar)} ${fmt(e.prenom_ar)} <span style="color:var(--muted);font-weight:400">#${e.id}</span></div>
       <div class="meta">
-        ${e.sex?`<span>${sexLabel(e)}</span>`:''}${empAgeBadge(e)}
+        ${e.sex?`<span>${sexLabel(e)}</span>`:`<span class="badge gray">جنس غير محدد</span>`}${empAgeBadge(e)}
+        ${ripBadgeMini(e)}
         <span>${fmt(e.nom_prenom)}</span>
         ${e.rip?`<span style="font-family:ui-monospace,monospace;font-size:.72rem">${maskRip(e.rip)}</span>`:''}
+        ${e.tel?`<span>📞 ${fmt(e.tel)}</span>`:''}
+        ${e.email?`<span>✉️ ${fmt(e.email)}</span>`:''}
         ${e.credit_restant>0?`<span class="badge red">متبقي ${money(e.credit_restant)}</span>`:''}
         ${e.total_aide>0?`<span class="badge green">منح ${money(e.total_aide)}</span>`:''}
       </div>
@@ -766,14 +1087,15 @@ function doSearch(){
 
   if(!q){
     let list = [...DB.employees].sort((a,b)=>(a.nom_ar||'').localeCompare(b.nom_ar||'','ar'));
-    list = applyEmpFilters(list,'emp-sex','emp-age');
+    list = applyEmpFilters(list,'emp-sex','emp-age','emp-rip');
     box.innerHTML = `<div class="section-title" style="margin-top:0">الموظفون (${list.length})</div>` +
       (list.length ? list.map(empRow).join('') : '<div class="empty">لا توجد نتائج مطابقة للفلاتر</div>');
     return;
   }
   const res = DB.employees.filter(e =>
     String(e.id).includes(q) || (e.nom_prenom||'').toLowerCase().includes(q) ||
-    (e.nom_ar||'').includes(q) || (e.prenom_ar||'').includes(q) || (e.rip||'').includes(q)
+    (e.nom_ar||'').includes(q) || (e.prenom_ar||'').includes(q) || (e.rip||'').includes(q) ||
+    (e.tel||'').includes(q) || (e.email||'').toLowerCase().includes(q)
   ).filter(empPred).slice(0,25);
   const resAides = DB.aides.filter(a =>
     (a.nom_ar||'').includes(q) || (a.prenom_ar||'').includes(q) || (a.type_aide_ar||'').includes(q)
@@ -941,8 +1263,10 @@ function openEmployee(id){
     <div class="detail-row"><span class="k">حالة الموظف</span><span class="v">${empStatutBadge(e)}</span></div>
     <div class="detail-row"><span class="k">الجنس</span><span class="v">${fmt(e.sex)==='M'?'ذكر':fmt(e.sex)==='F'?'أنثى':fmt(e.sex)}</span></div>
     <div class="detail-row"><span class="k">تاريخ الميلاد</span><span class="v">${fmt(e.date_naissance)}</span></div>
-    <div class="detail-row"><span class="k">RIP</span><span class="v" style="font-family:ui-monospace,monospace;font-size:.78rem">${maskRip(e.rip)}</span></div>
+    <div class="detail-row"><span class="k">RIP</span><span class="v" style="font-family:ui-monospace,monospace;font-size:.78rem">${maskRip(e.rip)} ${ripBadgeFull(e)}</span></div>
     <div class="detail-row"><span class="k">رقم الضمان</span><span class="v">${fmt(e.num_ss)}</span></div>
+    <div class="detail-row"><span class="k">📞 الهاتف</span><span class="v" dir="ltr" style="text-align:right">${e.tel?`<a href="tel:${esc(e.tel)}" style="color:var(--accent)">${fmt(e.tel)}</a>${phoneStatusOf(e).ok?'':' <span class="badge red">صيغة غير صحيحة</span>'}`:'<span style="color:var(--muted)">—</span>'}</span></div>
+    <div class="detail-row"><span class="k">✉️ البريد الإلكتروني</span><span class="v" dir="ltr" style="text-align:right;word-break:break-all">${e.email?`<a href="mailto:${esc(e.email)}" style="color:var(--accent)">${fmt(e.email)}</a>${emailOk(e.email)?'':' <span class="badge red">صيغة غير صحيحة</span>'}`:'<span style="color:var(--muted)">—</span>'}</span></div>
     ${(e.date_retraite||e.retrait_dec_num||e.retrait_dec_date)?`
     <div class="detail-row"><span class="k">📅 تاريخ التقاعد</span><span class="v">${fmt(e.date_retraite)}</span></div>
     <div class="detail-row"><span class="k">📄 قرار التقاعد/التوقف</span><span class="v">${fmt(e.retrait_dec_num)}${e.retrait_dec_date?` — ${fmt(e.retrait_dec_date)}`:''}</span></div>
@@ -1239,31 +1563,37 @@ function bindEmpStatusFields(){
   sel.addEventListener('change', toggle); toggle();
 }
 function showAddEmployee(){
-  window._onModalReady = bindEmpStatusFields;
+  window._onModalReady = ()=>{ bindEmpStatusFields(); bindEmpExtras(true); };
   openModal({
     title:'إضافة موظف جديد', saveLabel:'إضافة الموظف',
     fields:[
       {name:'nom_ar', label:'اللقب بالعربية', required:true},
       {name:'prenom_ar', label:'الاسم بالعربية', required:true},
       {name:'nom_prenom', label:'الاسم باللاتينية'},
-      {name:'sex', label:'الجنس', type:'select', value:'M', options:[{v:'M',t:'ذكر'},{v:'F',t:'أنثى'}]},
+      {name:'sex', label:'الجنس', type:'select', value:'', options:[{v:'',t:'غير محدد'},{v:'M',t:'ذكر'},{v:'F',t:'أنثى'}], hint:'⚡ يُستنتج تلقائياً من الاسم'},
       {name:'statut_emploi', label:'حالة الموظف', type:'select', value:'يعمل', options:EMP_STATUTS.map(s=>({v:s,t:s}))},
       {name:'date_naissance', label:'تاريخ الميلاد'},
-      {name:'rip', label:'رقم RIP', inputmode:'numeric', hint:'10 إلى 20 رقم'},
+      {name:'rip', label:'رقم RIP', inputmode:'numeric', hint:'20 رقماً بالضبط'},
       {name:'num_ss', label:'رقم الضمان', inputmode:'numeric'},
+      {name:'tel', label:'رقم الهاتف', inputmode:'tel', placeholder:'0550123456', hint:'مثال: 0550123456 أو +213550123456'},
+      {name:'email', label:'البريد الإلكتروني', inputmode:'email', placeholder:'name@example.dz', hint:'مثال: name@example.dz'},
       ...empRetirementFields({}),
     ],
     onSave: vals=>{
-      const dups=findDuplicateEmployees(vals);
-      if(dups.length){ confirmAddDuplicate(dups, ()=>saveNewEmployee(vals)); return; }
-      saveNewEmployee(vals);
+      const go=()=>{
+        const dups=findDuplicateEmployees(vals);
+        if(dups.length){ confirmAddDuplicate(dups, ()=>saveNewEmployee(vals)); return; }
+        saveNewEmployee(vals);
+      };
+      warnInvalidEmpInfo(vals, go);
     }
   });
 }
 function saveNewEmployee(vals){
   const id=nextId();
   const e={id, nom_ar:vals.nom_ar, prenom_ar:vals.prenom_ar, nom_prenom:vals.nom_prenom,
-    sex:vals.sex, statut_emploi:vals.statut_emploi||'يعمل', date_naissance:vals.date_naissance, rip:vals.rip||null, num_ss:vals.num_ss||null,
+    sex:vals.sex||null, tel:normalizePhoneDZ(vals.tel)||null, email:(vals.email||'').trim()||null,
+    statut_emploi:vals.statut_emploi||'يعمل', date_naissance:vals.date_naissance, rip:vals.rip||null, num_ss:vals.num_ss||null,
     total_aide:0, aide_paye:0, total_credit:0, credit_paye:0, credit_restant:0, enfants_m:0, enfants_f:0};
   if(vals.statut_emploi==='متقاعد'||vals.statut_emploi==='متوقف عن العمل'){
     Object.assign(e,{date_retraite:vals.date_retraite||'', retrait_dec_num:vals.retrait_dec_num||'', retrait_dec_date:vals.retrait_dec_date||'', retrait_note:vals.retrait_note||''});
@@ -1298,36 +1628,43 @@ function showRetirementAlert(empId){
 }
 function showEditEmployee(id){
   const e=DB.employees.find(x=>x.id==id); if(!e) return;
+  window._onModalReady = ()=>{ bindEmpStatusFields(); bindEmpExtras(false); };
   openModal({
     title:'تعديل موظف #'+id, saveLabel:'حفظ التعديلات',
     fields:[
       {name:'nom_ar', label:'اللقب بالعربية', required:true, value:e.nom_ar||''},
       {name:'prenom_ar', label:'الاسم بالعربية', required:true, value:e.prenom_ar||''},
       {name:'nom_prenom', label:'الاسم باللاتينية', value:e.nom_prenom||''},
-      {name:'sex', label:'الجنس', type:'select', value:e.sex||'M', options:[{v:'M',t:'ذكر'},{v:'F',t:'أنثى'}]},
+      {name:'sex', label:'الجنس', type:'select', value:e.sex||'', options:[{v:'',t:'غير محدد'},{v:'M',t:'ذكر'},{v:'F',t:'أنثى'}], hint:'⚡ يُستنتج تلقائياً من الاسم'},
       {name:'statut_emploi', label:'حالة الموظف', type:'select', value:e.statut_emploi||'يعمل', options:EMP_STATUTS.map(s=>({v:s,t:s}))},
       {name:'date_naissance', label:'تاريخ الميلاد', value:e.date_naissance||''},
-      {name:'rip', label:'رقم RIP', value:e.rip||'', inputmode:'numeric'},
+      {name:'rip', label:'رقم RIP', value:e.rip||'', inputmode:'numeric', hint:'20 رقماً بالضبط'},
       {name:'num_ss', label:'رقم الضمان', value:e.num_ss||'', inputmode:'numeric'},
+      {name:'tel', label:'رقم الهاتف', value:e.tel||'', inputmode:'tel', placeholder:'0550123456', hint:'مثال: 0550123456 أو +213550123456'},
+      {name:'email', label:'البريد الإلكتروني', value:e.email||'', inputmode:'email', placeholder:'name@example.dz', hint:'مثال: name@example.dz'},
       ...empRetirementFields(e),
     ],
     onSave: vals=>{
-      const changed=logStatusChange(e, vals.statut_emploi||'يعمل');
-      Object.assign(e, {
-        nom_ar:vals.nom_ar, prenom_ar:vals.prenom_ar, nom_prenom:vals.nom_prenom,
-        sex:vals.sex, statut_emploi:vals.statut_emploi||'يعمل', date_naissance:vals.date_naissance,
-        rip:vals.rip||null, num_ss:vals.num_ss||null,
-        date_retraite:vals.date_retraite||'', retrait_dec_num:vals.retrait_dec_num||'',
-        retrait_dec_date:vals.retrait_dec_date||'', retrait_note:vals.retrait_note||''
-      });
-      DB.aides.filter(a=>a.employee_id==id).forEach(a=>{a.nom_ar=vals.nom_ar;a.prenom_ar=vals.prenom_ar;});
-      DB.credits.filter(c=>c.employee_id==id).forEach(c=>{c.nom_ar=vals.nom_ar;c.prenom_ar=vals.prenom_ar;});
-      DB.payments.filter(p=>p.employee_id==id).forEach(p=>{p.nom_ar=vals.nom_ar;p.prenom_ar=vals.prenom_ar;});
-      saveDB(); closeModal();
-      if(changed && e.statut_emploi==='متقاعد' && nz(e.credit_restant)>0){
-        openEmployee(id);
-        showRetirementAlert(id);
-      } else openEmployee(id);
+      const doSave=()=>{
+        const changed=logStatusChange(e, vals.statut_emploi||'يعمل');
+        Object.assign(e, {
+          nom_ar:vals.nom_ar, prenom_ar:vals.prenom_ar, nom_prenom:vals.nom_prenom,
+          sex:vals.sex||null, tel:normalizePhoneDZ(vals.tel)||null, email:(vals.email||'').trim()||null,
+          statut_emploi:vals.statut_emploi||'يعمل', date_naissance:vals.date_naissance,
+          rip:vals.rip||null, num_ss:vals.num_ss||null,
+          date_retraite:vals.date_retraite||'', retrait_dec_num:vals.retrait_dec_num||'',
+          retrait_dec_date:vals.retrait_dec_date||'', retrait_note:vals.retrait_note||''
+        });
+        DB.aides.filter(a=>a.employee_id==id).forEach(a=>{a.nom_ar=vals.nom_ar;a.prenom_ar=vals.prenom_ar;});
+        DB.credits.filter(c=>c.employee_id==id).forEach(c=>{c.nom_ar=vals.nom_ar;c.prenom_ar=vals.prenom_ar;});
+        DB.payments.filter(p=>p.employee_id==id).forEach(p=>{p.nom_ar=vals.nom_ar;p.prenom_ar=vals.prenom_ar;});
+        saveDB(); closeModal();
+        if(changed && e.statut_emploi==='متقاعد' && nz(e.credit_restant)>0){
+          openEmployee(id);
+          showRetirementAlert(id);
+        } else openEmployee(id);
+      };
+      warnInvalidEmpInfo(vals, doSave);
     }
   });
 }
@@ -1987,6 +2324,7 @@ function printEmployee(id){
     <tr><th style="width:25%">الجنس</th><td style="width:25%">${e.sex==='M'?'ذكر':(e.sex==='F'?'أنثى':'—')}</td><th style="width:25%">تاريخ الميلاد</th><td>${fmt(e.date_naissance)}</td></tr>
     <tr><th>الحالة</th><td>${fmt(e.statut_emploi)||'يعمل'}</td><th>تاريخ التقاعد</th><td>${fmt(e.date_retraite)}</td></tr>
     <tr><th>RIP</th><td>${maskRip(e.rip)}</td><th>رقم الضمان</th><td>${fmt(e.num_ss)}</td></tr>
+    <tr><th>الهاتف</th><td>${fmt(e.tel)}</td><th>البريد الإلكتروني</th><td>${fmt(e.email)}</td></tr>
     <tr><th>إجمالي المنح</th><td>${money(e.total_aide)} دج</td><th>إجمالي القروض</th><td>${money(e.total_credit)} دج</td></tr>
     <tr><th>متبقي القروض</th><td>${money(e.credit_restant)} دج</td><th></th><td></td></tr></table>`;
   b+=`<h2>🎁 المنح (${aides.length})</h2>`+(aides.length?printTable(['النوع','المبلغ (دج)','السنة','الحالة','الوثيقة','رقم الوثيقة'],aides.map(a=>[fmt(a.type_aide_ar),money(a.montant),fmt(a.annee),fmt(a.statut),fmt(a.type_doc),fmt(a.n_doc)])):'<p>لا توجد منح</p>');
@@ -2000,8 +2338,8 @@ function exportReportCSV(){
   const list=applyEmpFilters([...DB.employees],'rep-sex','rep-age');
   const doExport=ripVisible=>{
     const ripFmt=v=>ripVisible?String(v??''):String(v??'').replace(/.(?=.{4})/g,'•');
-    const head=['id','اللقب','الاسم','الاسم باللاتينية','الجنس','العمر','تاريخ الميلاد','RIP','رقم الضمان','إجمالي المنح','إجمالي القروض','متبقي القروض'];
-    const rows=list.map(e=>[e.id,e.nom_ar||'',e.prenom_ar||'',e.nom_prenom||'',sexLabel(e),ageOf(e.date_naissance)??'',e.date_naissance||'',ripFmt(e.rip),e.num_ss||'',nz(e.total_aide),nz(e.total_credit),nz(e.credit_restant)]);
+    const head=['id','اللقب','الاسم','الاسم باللاتينية','الجنس','العمر','تاريخ الميلاد','RIP','رقم الضمان','الهاتف','البريد الإلكتروني','إجمالي المنح','إجمالي القروض','متبقي القروض'];
+    const rows=list.map(e=>[e.id,e.nom_ar||'',e.prenom_ar||'',e.nom_prenom||'',sexLabel(e),ageOf(e.date_naissance)??'',e.date_naissance||'',ripFmt(e.rip),e.num_ss||'',e.tel||'',e.email||'',nz(e.total_aide),nz(e.total_credit),nz(e.credit_restant)]);
     const csv='\uFEFF'+[head,...rows].map(r=>r.map(c=>{ c=String(c); return /[",;\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c; }).join(';')).join('\r\n');
     const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
@@ -2023,21 +2361,25 @@ function exportReportCSV(){
 /* ═══════ 👤 إنشاء/ربط موظف من طلب سلفة يتيم ═══════ */
 function showCreateEmployeeFromReq(reqIdx){
   const r=DB.credit_requests[reqIdx]; if(!r) return;
+  window._onModalReady = ()=>bindEmpExtras(true);
   openModal({
     title:'👤 إنشاء موظف من طلب السلفة', saveLabel:'إنشاء وربط',
     fields:[
       {name:'nom_ar', label:'اللقب بالعربية', required:true, value:r.nom_ar&&r.nom_ar!=='inconnu'?r.nom_ar:''},
       {name:'prenom_ar', label:'الاسم بالعربية', required:true, value:r.prenom_ar&&r.prenom_ar!=='inconnu'?r.prenom_ar:''},
       {name:'nom_prenom', label:'الاسم باللاتينية', value:r.nom&&r.nom!=='inconnu'?r.nom:''},
-      {name:'sex', label:'الجنس', type:'select', value:'', options:[{v:'',t:'غير محدد'},{v:'M',t:'ذكر'},{v:'F',t:'أنثى'}]},
+      {name:'sex', label:'الجنس', type:'select', value:'', options:[{v:'',t:'غير محدد'},{v:'M',t:'ذكر'},{v:'F',t:'أنثى'}], hint:'⚡ يُستنتج تلقائياً من الاسم'},
       {name:'date_naissance', label:'تاريخ الميلاد'},
-      {name:'rip', label:'رقم RIP', inputmode:'numeric'},
+      {name:'rip', label:'رقم RIP', inputmode:'numeric', hint:'20 رقماً بالضبط'},
       {name:'num_ss', label:'رقم الضمان', inputmode:'numeric'},
+      {name:'tel', label:'رقم الهاتف', inputmode:'tel', placeholder:'0550123456', hint:'مثال: 0550123456 أو +213550123456'},
+      {name:'email', label:'البريد الإلكتروني', inputmode:'email', placeholder:'name@example.dz', hint:'مثال: name@example.dz'},
     ],
     onSave: vals=>{
       const id=nextId();
       DB.employees.push({id, nom_ar:vals.nom_ar, prenom_ar:vals.prenom_ar, nom_prenom:vals.nom_prenom,
-        sex:vals.sex||null, statut_emploi:'يعمل', date_naissance:vals.date_naissance||null, rip:vals.rip||null, num_ss:vals.num_ss||null,
+        sex:vals.sex||null, tel:normalizePhoneDZ(vals.tel)||null, email:(vals.email||'').trim()||null,
+        statut_emploi:'يعمل', date_naissance:vals.date_naissance||null, rip:vals.rip||null, num_ss:vals.num_ss||null,
         total_aide:0, aide_paye:0, total_credit:0, credit_paye:0, credit_restant:0, enfants_m:0, enfants_f:0});
       r.employee_id=id;
       saveDB(); closeModal(); toast('تم إنشاء الموظف وربط الطلب ✓');
@@ -2197,7 +2539,8 @@ function handleCsvImport(ev){
     const head=csvSplit(lines[0], delim);
     const col=n=>head.findIndex(h=>h===n);
     const idx={id:col('id'), nom:col('اللقب'), prenom:col('الاسم'), nomp:col('الاسم باللاتينية'),
-      sex:col('الجنس'), dn:col('تاريخ الميلاد'), rip:col('RIP'), ss:col('رقم الضمان')};
+      sex:col('الجنس'), dn:col('تاريخ الميلاد'), rip:col('RIP'), ss:col('رقم الضمان'),
+      tel:col('الهاتف'), email:col('البريد الإلكتروني')};
     if(idx.id<0||idx.nom<0||idx.prenom<0){ toast('صيغة غير معروفة — استخدم ملف «📄 تصدير Excel/CSV» كنموذج', true); return; }
     const sexMap={'ذكر':'M','أنثى':'F','M':'M','F':'F','male':'M','female':'F'};
     const updates=[], adds=[]; let skip=0;
@@ -2212,7 +2555,9 @@ function handleCsvImport(ev){
         sex:idx.sex>=0?(sexMap[(c[idx.sex]||'').trim()]||''):'',
         date_naissance:idx.dn>=0?(c[idx.dn]||''):'',
         rip:idx.rip>=0?(c[idx.rip]||''):'',
-        num_ss:idx.ss>=0?(c[idx.ss]||''):''
+        num_ss:idx.ss>=0?(c[idx.ss]||''):'',
+        tel:idx.tel>=0?normalizePhoneDZ(c[idx.tel]||''):'',
+        email:idx.email>=0?(c[idx.email]||'').trim():''
       };
       const ex=DB.employees.find(x=>String(x.id)===idVal);
       if(ex) updates.push({ex, vals});
@@ -2226,7 +2571,7 @@ function handleCsvImport(ev){
         <div class="detail-row"><span class="k">تحديث موظفين موجودين</span><span class="v">${updates.length}</span></div>
         <div class="detail-row"><span class="k">إضافة موظفين جدد</span><span class="v">${adds.length}</span></div>
         <div class="detail-row"><span class="k">صفوف متجاهَلة (بلا رقم/اسم)</span><span class="v">${skip}</span></div>
-        <p style="font-size:.72rem;color:var(--muted);margin-top:10px">⚠️ التحديث يشمل: الأسماء، الجنس، تاريخ الميلاد، RIP، رقم الضمان. الإجماليات تُحسب تلقائياً من القروض والمنح.</p>
+        <p style="font-size:.72rem;color:var(--muted);margin-top:10px">⚠️ التحديث يشمل: الأسماء، الجنس، تاريخ الميلاد، RIP، رقم الضمان، الهاتف، البريد الإلكتروني. الإجماليات تُحسب تلقائياً من القروض والمنح.</p>
       </div>`,
       onYes:()=>{
         updates.forEach(u=>{ Object.assign(u.ex, u.vals); recalcEmp(u.ex.id); });
@@ -2250,7 +2595,9 @@ function renderGuide(){
     {ic:'💳',t:'القروض',d:'السلفات مرتبة حسب المتبقي، مع خيار «المتبقي فقط» وإضافة قرض أو طلب سلفة. عند منح السلفة يمكن تسجيل رقم الشيك وتاريخه، وكل قرض نشط له خطة تسديد شهرية قابلة للطباعة (زر 📅 خطة في ملف الموظف).'},
     {ic:'📊',t:'التقارير',d:'ملخص الميزانية ونسبتا استرداد (إجمالية + قابلة للتحصيل بعد استبعاد ديون المتقاعدين)، مخططات، أعلى المستفيدين وأعلى 15 مديوناً مع خيار «استبعاد المتقاعدين». قابل للطباعة والتصدير CSV.'},
     {ic:'🧾',t:'الوصلات والطباعة',d:'اطبع وصل تسديد رسمي لكل عملية (زر 🧾 وصل في ملف الموظف) يتضمن المبلغ والقرض والمتبقي وخانات التوقيع، أو خطة تسديد، أو ملف موظف كامل، أو تقريراً شاملاً.'},
-    {ic:'📥',t:'استيراد CSV',d:'زر «📥 استيراد CSV» في الرئيسية يحدّث سجل الموظفين جماعياً من ملف Excel/CSV (بنفس صيغة التصدير): الأسماء، الجنس، الميلاد، RIP، الضمان — مع معاينة قبل التنفيذ.'},
+    {ic:'⚡',t:'كشف الجنس وأخطاء RIP',d:'يُستنتج جنس الموظف تلقائياً من اسمه أثناء الكتابة (قاموس أسماء جزائرية وعربية)، وزر «⚡ استكمال الجنس» في صفحة البحث يعبّئ الجنس الناقص للجميع بعد تأكيد. فلتر «كل حالات RIP» يعرض الموظفين ذوي الأخطاء: بدون رقم، أو طولاً خاطئاً (المطلوب 20 رقماً بالضبط)، أو محارف غير رقمية، أو رقماً مكرراً — وبطاقة «جودة البيانات» في الرئيسية تلخص كل ذلك مع نواقص الهاتف والبريد.'},
+    {ic:'📞',t:'الهاتف والبريد',d:'لكل موظف رقم هاتف وبريد إلكتروني مع تحقق من الصيغة (05/06/07 للموبايل)، يظهران في ملفه كروابط اتصال/مراسلة، ويشملهما البحث والتصدير والاستيراد والطباعة.'},
+    {ic:'📥',t:'استيراد CSV',d:'زر «📥 استيراد CSV» في الرئيسية يحدّث سجل الموظفين جماعياً من ملف Excel/CSV (بنفس صيغة التصدير): الأسماء، الجنس، الميلاد، RIP، الضمان، الهاتف، البريد — مع معاينة قبل التنفيذ.'},
     {ic:'⚙️',t:'الحماية والإعدادات',d:'من ⚙️: تعيين رمز PIN يقفل التطبيق عند كل فتح (زر 🔒 للقفل الفوري)، إخفاء أرقام RIP (زر 🙈) في كل الشاشات والطباعة، اسم المستخدم الموثَّق في سجل الحالات، والوضع الليلي/النهاري (زر ☀️).'},
   ];
   document.getElementById('guide-body').innerHTML=`

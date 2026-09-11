@@ -1,0 +1,27 @@
+{
+  "name": "الخدمات الاجتماعية - الأغواط",
+  "short_name": "الخدمات الاجتماعية",
+  "description": "تطبيق إدارة بيانات صندوق الخدمات الاجتماعية — ولاية الأغواط. يعمل بدون إنترنت.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./app03-v02.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1220",
+  "theme_color": "#1a365d",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
